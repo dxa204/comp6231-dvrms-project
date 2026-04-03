@@ -14,18 +14,21 @@ Fault-tolerant and highly available distributed vehicle reservation system using
 ## Project Structure
 ```
 dvrms-project/
-├── src/main/java/com/dvrms/
-│   ├── common/             # Shared config, constants, message formats
-│   │   └── common.Config.java
-│   ├── frontend/           # Hugo — FE (CORBA server + UDP client)
-│   ├── sequencer/          # Derin — Sequencer (UDP server)
-│   │   ├── Sequencer.java
-│   │   ├── ReplicaTarget.java
-│   │   ├── ReliableUDPSender.java
-│   │   ├── RMNotifier.java
-│   │   └── SequencerTest.java
-│   ├── replicamanager/     # Titouan — RM (failure detection + recovery)
-│   └── replica/            # Each member's replica implementation
+├── src/
+│   ├── main/java/com/dvrms/
+│   │   ├── common/             # Shared config, constants, message formats
+│   │   │   └── common.Config.java
+│   │   ├── frontend/           # Hugo — FE (CORBA server + UDP client)
+│   │   ├── sequencer/          # Derin — Sequencer (UDP server)
+│   │   │   ├── Sequencer.java
+│   │   │   ├── ReplicaTarget.java
+│   │   │   ├── ReliableUDPSender.java
+│   │   │   └── RMNotifier.java
+│   │   ├── replicamanager/     # Titouan — RM (failure detection + recovery)
+│   │   └── replica/            # Each member's replica implementation
+│   └── test/java/com/dvrms/
+│       └── sequencer/
+│           └── SequencerTest.java
 ├── README.md
 └── .gitignore
 ```
@@ -37,7 +40,7 @@ dvrms-project/
 
 ### Compile
 ```bash
-javac -d out src/main/java/com/dvrms/common/*.java src/main/java/com/dvrms/sequencer/*.java
+javac -d out src/main/java/com/dvrms/common/*.java src/main/java/com/dvrms/sequencer/*.java src/test/java/com/dvrms/sequencer/*.java
 ```
 
 ### Run the Sequencer

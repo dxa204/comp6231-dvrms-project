@@ -7,7 +7,7 @@ Fault-tolerant and highly available distributed vehicle reservation system using
 | Member | Module | Student ID |
 |---|---|---|
 | Hugo Xu | Front End (FE) | 40064100 |
-| Derin Akay | sequencer.Sequencer | 40294984 |
+| Derin Akay | Sequencer | 40294984 |
 | Titouan Sablé | Replica Manager (RM) | 40179062 |
 | Thach Pham | Test Cases | 40351367 |
 
@@ -18,12 +18,12 @@ dvrms-project/
 │   ├── common/             # Shared config, constants, message formats
 │   │   └── common.Config.java
 │   ├── frontend/           # Hugo — FE (CORBA server + UDP client)
-│   ├── sequencer/          # Derin — sequencer.Sequencer (UDP server)
-│   │   ├── sequencer.Sequencer.java
-│   │   ├── sequencer.ReplicaTarget.java
-│   │   ├── sequencer.ReliableUDPSender.java
-│   │   ├── sequencer.RMNotifier.java
-│   │   └── sequencer.SequencerTest.java
+│   ├── sequencer/          # Derin — Sequencer (UDP server)
+│   │   ├── Sequencer.java
+│   │   ├── ReplicaTarget.java
+│   │   ├── ReliableUDPSender.java
+│   │   ├── RMNotifier.java
+│   │   └── SequencerTest.java
 │   ├── replicamanager/     # Titouan — RM (failure detection + recovery)
 │   └── replica/            # Each member's replica implementation
 ├── README.md
@@ -40,14 +40,14 @@ dvrms-project/
 javac -d out src/main/java/com/dvrms/common/*.java src/main/java/com/dvrms/sequencer/*.java
 ```
 
-### Run the sequencer.Sequencer
+### Run the Sequencer
 ```bash
-java -cp out com.dvrms.sequencer.sequencer.Sequencer
+java -cp out com.dvrms.sequencer.Sequencer
 ```
 
-### Run the sequencer.Sequencer Test (in a separate terminal)
+### Run the Sequencer Test (in a separate terminal)
 ```bash
-java -cp out com.dvrms.sequencer.sequencer.SequencerTest
+java -cp out com.dvrms.sequencer.SequencerTest
 ```
 
 ## Communication Protocol
@@ -57,12 +57,12 @@ All inter-component communication uses **UDP** with pipe-delimited ASCII message
 ### Message Formats
 | Message | Direction | Format |
 |---|---|---|
-| CLIENT_REQUEST | FE → sequencer.Sequencer | `SEQ_REQ\|<msgID>\|<feHost>\|<fePort>\|<method>\|<args...>` |
-| SEQUENCED_REQUEST | sequencer.Sequencer → Replicas | `REQ\|<msgID>\|<seqNum>\|<feHost>\|<fePort>\|<method>\|<args...>` |
-| ACK | Replica → sequencer.Sequencer | `ACK\|<msgID>` |
-| UPDATE_TARGETS | RM → sequencer.Sequencer | `UPDATE\|<oldReplicaID>\|<newHost>\|<newPort>` |
+| CLIENT_REQUEST | FE → Sequencer | `SEQ_REQ\|<msgID>\|<feHost>\|<fePort>\|<method>\|<args...>` |
+| SEQUENCED_REQUEST | Sequencer → Replicas | `REQ\|<msgID>\|<seqNum>\|<feHost>\|<fePort>\|<method>\|<args...>` |
+| ACK | Replica → Sequencer | `ACK\|<msgID>` |
+| UPDATE_TARGETS | RM → Sequencer | `UPDATE\|<oldReplicaID>\|<newHost>\|<newPort>` |
 | FAULT_REPORT | FE → RM | `FAULT\|<replicaID>\|<seqNum>` |
-| CRASH_SUSPECT | FE/sequencer.Sequencer → RM | `CRASH\|<replicaID>` |
+| CRASH_SUSPECT | FE/Sequencer → RM | `CRASH\|<replicaID>` |
 | RESULT | Replica → FE | `RESULT\|<requestID>\|<replicaID>\|<result>` |
 
 ### Reliable UDP
@@ -73,7 +73,7 @@ All inter-component communication uses **UDP** with pipe-delimited ASCII message
 ## Port Assignments
 | Component | Port |
 |---|---|
-| sequencer.Sequencer | 5000 |
+| Sequencer | 5000 |
 | Front End | 5001 |
 | Replica 1 | 6001 |
 | Replica 2 | 6002 |

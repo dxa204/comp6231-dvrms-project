@@ -14,7 +14,7 @@ public class UDPClient {
             DatagramPacket packet = new DatagramPacket(data, data.length, address, port);
             socket.send(packet);
 
-            System.out.println("[FE → " + port + "] " + message);
+            System.out.println("[FE SEND → " + port + "] " + message);
 
         } catch (Exception e) {
             e.printStackTrace();

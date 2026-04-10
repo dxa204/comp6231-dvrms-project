@@ -1,10 +1,10 @@
-import FrontEndApp.*;
-import org.omg.CORBA.ORB;
+package com.dvrms.frontend;
+
+import org.omg.CORBA.*;
+
+import FrontEndApp.FrontEndPOA;
 import com.dvrms.common.Config;
 
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -13,13 +13,12 @@ public class FrontEndImpl extends FrontEndPOA {
 
     private final Map<String, List<Response>> responseMap = new ConcurrentHashMap<>();
     private final Map<String, Integer> faultCount = new ConcurrentHashMap<>();
+    private final Map<String, Long> requestStartTime = new ConcurrentHashMap<>();
 
 
     public FrontEndImpl() throws Exception {
         new UDPServer(responseMap).start();
     }
-
-    private ORB orb;
 
     // =========================
     // CORBA METHODS
@@ -108,6 +107,28 @@ public class FrontEndImpl extends FrontEndPOA {
         return "REQ-" + System.currentTimeMillis() + "-" + Thread.currentThread().getId();
     }
 
+
+    // =========================
+    // SEQUENCER COMMUNICATION
+    // =========================
+    private void sendToSequencer(Request req) {
+
+        StringBuilder sb = new StringBuilder();
+
+        // SEQ_REQ|<msgID>|<feHost>|<fePort>|<method>|<args...>
+        sb.append(Config.MSG_SEQ_REQ).append(Config.DELIMITER)
+                .append(req.requestID).append(Config.DELIMITER)
+                .append(Config.FE_HOST).append(Config.DELIMITER)
+                .append(Config.FE_PORT).append(Config.DELIMITER)
+                .append(req.operation);
+
+        for (String p : req.params) {
+            sb.append(Config.DELIMITER).append(p);
+        }
+
+        UDPClient.send(sb.toString(), Config.SEQUENCER_HOST, Config.SEQUENCER_PORT);
+    }
+
     // =========================
     // WAIT FOR MAJORITY
     // =========================
@@ -126,7 +147,7 @@ public class FrontEndImpl extends FrontEndPOA {
                 String result = majorityVote(responses);
 
                 if (result != null) {
-                    detectSoftwareFailure(responses, result);
+                    detectSoftwareFailure(responses, result, requestID);
                     return result;
                 }
             }
@@ -135,7 +156,7 @@ public class FrontEndImpl extends FrontEndPOA {
         }
 
         // Timeout → crash detection
-        detectCrashFailure(requestID);
+        detectCrash(requestID);
         return "TIMEOUT ERROR";
     }
 
@@ -163,7 +184,7 @@ public class FrontEndImpl extends FrontEndPOA {
     // FAILURE DETECTION
     // =========================
 
-   private void detectSoftwareFailure(List<Response> responses, String correct, String msgID) {
+    private void detectSoftwareFailure(List<Response> responses, String correct, String msgID) {
 
         for (Response r : responses) {
 
@@ -172,43 +193,44 @@ public class FrontEndImpl extends FrontEndPOA {
                 int count = faultCount.getOrDefault(r.replicaID, 0) + 1;
                 faultCount.put(r.replicaID, count);
 
-                System.out.println("[FE] Fault detected: " + r.replicaID);
+                System.out.println("[FE] Fault detected: " + r.replicaID + " count=" + count);
 
                 if (count >= 3) {
-                    
+
                     String faultMsg = Config.MSG_FAULT_REPORT
-                        + Config.DELIMITER + r.replicaID
-                        + Config.DELIMITER + msgID;
+                            + Config.DELIMITER + r.replicaID
+                            + Config.DELIMITER + msgID;
 
                     notifyRM(faultMsg);
+
+                    faultCount.put(r.replicaID, 0);
                 }
+
+            } else {
+                faultCount.put(r.replicaID, 0);
             }
         }
-    }    
+    }
 
     private void detectCrash(String msgID) {
 
         System.out.println("[FE] Timeout → detecting crashed replicas");
-    
-        List<Response> responses = responseMap.get(msgID);
-    
-        Set<String> respondedReplicas = new HashSet<>();
-    
-        if (responses != null) {
-            for (Response r : responses) {
-                respondedReplicas.add(r.replicaID);
-            }
+
+        List<Response> responses = responseMap.getOrDefault(msgID, new ArrayList<>());
+
+        Set<String> responded = new HashSet<>();
+        for (Response r : responses) {
+            responded.add(r.replicaID);
         }
 
-        // Known replicas
         List<String> allReplicas = Arrays.asList("R1", "R2", "R3", "R4");
-    
+
         for (String replica : allReplicas) {
-    
-            if (!respondedReplicas.contains(replica)) {
-    
+
+            if (!responded.contains(replica)) {
+
                 System.out.println("[FE] Suspected crash: " + replica);
-    
+
                 notifyRM(Config.MSG_CRASH_SUSPECT
                         + Config.DELIMITER + replica);
             }

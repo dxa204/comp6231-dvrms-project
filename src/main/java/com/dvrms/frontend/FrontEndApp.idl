@@ -1,0 +1,103 @@
+module FrontEndApp
+{
+    // --------------------
+    // Data Structures
+    // --------------------
+
+    struct Reservation
+    {
+        string customerID;
+        string vehicleID;
+        string startDate;  // format: ddmmyyyy
+        string endDate;    // format: ddmmyyyy
+    };
+
+    struct Vehicle
+    {
+        string vehicleID;
+        string vehicleNumber; // license plate or internal number
+        string vehicleType;   // e.g., Sedan, SUV, Truck
+        double price;
+    };
+
+    struct WaitingRequest
+    {
+        string customerID;
+        string startDate;  // format: ddmmyyyy
+        string endDate;    // format: ddmmyyyy
+    };
+
+    // --------------------
+    // Rental Office Interface
+    // --------------------
+    interface FrontEnd
+    {
+        // ----- Manager Operations -----
+        string addVehicle(
+            in string managerID,
+            in string vehicleNumber,
+            in string vehicleType,
+            in string vehicleID,
+            in double price
+        );
+
+        string removeVehicle(
+            in string managerID,
+            in string vehicleID
+        );
+
+        string listAvailableVehicles(
+            in string managerID
+        );
+
+        // ----- Customer Operations -----
+        string reserveVehicle(
+            in string customerID,
+            in string vehicleID,
+            in string startDate,
+            in string endDate
+        );
+
+        string remoteReserveVehicle(
+            in string customerID,
+            in string vehicleID,
+            in string startDate,
+            in string endDate,
+            in double budgetAmount
+        );
+
+        string cancelReservation(
+            in string customerID,
+            in string vehicleID
+        );
+
+        string remoteCancelReservation(
+            in string customerID,
+            in string vehicleID,
+            in double budgetAmount
+        );
+
+        string updateReservation(
+            in string customerID,
+            in string vehicleID,
+            in string newStartDate,
+            in string newEndDate
+        );
+
+        string findVehicle(
+            in string customerID,
+            in string vehicleType
+        );
+
+        string addToWaitingList(
+            in string customerID,
+            in string vehicleID,
+            in string startDate,
+            in string endDate
+        );
+
+        string getLocalVehiclesByType(
+            in string vehicleType
+        );
+    };
+};

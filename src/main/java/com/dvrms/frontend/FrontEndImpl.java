@@ -114,7 +114,7 @@ public class FrontEndImpl extends FrontEndPOA {
 
     private String waitForMajority(String requestID) throws InterruptedException {
 
-        long timeout = 3000; // fallback
+        long timeout = Config.ACK_TIMEOUT_MS * Config.MAX_RETRIES * 2; // fallback
         long start = System.currentTimeMillis();
 
         while (System.currentTimeMillis() - start < timeout) {
@@ -163,36 +163,69 @@ public class FrontEndImpl extends FrontEndPOA {
     // FAILURE DETECTION
     // =========================
 
-    private void detectSoftwareFailure(List<Response> responses, String correct, String msgID) {
+   private void detectSoftwareFailure(List<Response> responses, String correct, String msgID) {
 
         for (Response r : responses) {
+
             if (!r.result.equals(correct)) {
 
-                int c = faultCount.getOrDefault(r.replicaID, 0) + 1;
-                faultCount.put(r.replicaID, c);
+                int count = faultCount.getOrDefault(r.replicaID, 0) + 1;
+                faultCount.put(r.replicaID, count);
 
                 System.out.println("[FE] Fault detected: " + r.replicaID);
 
-                if (c >= 3) {
-                    notifyRM(Config.MSG_FAULT_REPORT
-                            + Config.DELIMITER + r.replicaID
-                            + Config.DELIMITER + msgID);
+                if (count >= 3) {
+                    
+                    String faultMsg = Config.MSG_FAULT_REPORT
+                        + Config.DELIMITER + r.replicaID
+                        + Config.DELIMITER + msgID;
+
+                    notifyRM(faultMsg);
                 }
+            }
+        }
+    }    
+
+    private void detectCrash(String msgID) {
+
+        System.out.println("[FE] Timeout → detecting crashed replicas");
+    
+        List<Response> responses = responseMap.get(msgID);
+    
+        Set<String> respondedReplicas = new HashSet<>();
+    
+        if (responses != null) {
+            for (Response r : responses) {
+                respondedReplicas.add(r.replicaID);
+            }
+        }
+
+        // Known replicas
+        List<String> allReplicas = Arrays.asList("R1", "R2", "R3", "R4");
+    
+        for (String replica : allReplicas) {
+    
+            if (!respondedReplicas.contains(replica)) {
+    
+                System.out.println("[FE] Suspected crash: " + replica);
+    
+                notifyRM(Config.MSG_CRASH_SUSPECT
+                        + Config.DELIMITER + replica);
             }
         }
     }
 
-    private void detectCrash(String msgID) {
-        System.out.println("[FE] Timeout → possible crash");
-
-        notifyRM(Config.MSG_CRASH_SUSPECT + Config.DELIMITER + "UNKNOWN");
-    }
-
     private void notifyRM(String message) {
 
-        UDPClient.send(message, Config.FE_HOST, Config.RM_1_PORT);
-        UDPClient.send(message, Config.FE_HOST, Config.RM_2_PORT);
-        UDPClient.send(message, Config.FE_HOST, Config.RM_3_PORT);
-        UDPClient.send(message, Config.FE_HOST, Config.RM_4_PORT);
+        int[] rmPorts = {
+                Config.RM_1_PORT,
+                Config.RM_2_PORT,
+                Config.RM_3_PORT,
+                Config.RM_4_PORT
+        };
+
+        for (int port : rmPorts) {
+            UDPClient.send(message, Config.FE_HOST, port);
+        }
     }
 }

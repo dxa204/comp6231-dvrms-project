@@ -1,4 +1,4 @@
-
+package com.dvrms.replica2;
 import java.io.Serializable;
 
 public class Vehicle implements Serializable {

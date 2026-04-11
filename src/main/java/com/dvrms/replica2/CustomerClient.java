@@ -1,4 +1,4 @@
-
+package com.dvrms.replica2;
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
@@ -18,8 +18,8 @@ public class CustomerClient {
     public static void main(String[] args)throws Exception{
     	
         DVRMS clientMTL = connect("MTL");
-        DVRMS clientWPG = connect("WPG");
-        DVRMS clientBNF = connect("BNF");
+        //DVRMS clientWPG = connect("WPG");
+        //DVRMS clientBNF = connect("BNF");
         
         // test cases for clients
         System.out.println(clientMTL.reserveVehicle("MTLU1111", "MTL1002", "2026-03-10", "2026-03-11"));

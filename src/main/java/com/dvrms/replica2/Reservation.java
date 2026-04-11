@@ -1,4 +1,4 @@
-
+package com.dvrms.replica2;
 public class Reservation {
     public String customerID;
     public String start;

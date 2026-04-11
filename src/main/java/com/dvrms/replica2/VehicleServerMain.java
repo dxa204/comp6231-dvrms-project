@@ -1,3 +1,4 @@
+package com.dvrms.replica2;
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.*;
 

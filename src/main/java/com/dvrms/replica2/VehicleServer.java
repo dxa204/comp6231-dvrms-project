@@ -1,3 +1,4 @@
+package com.dvrms.replica2;
 import org.omg.CORBA.*;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;

@@ -1,0 +1,61 @@
+module DVRMS {
+
+    interface DVRMS {
+
+        // ================= MANAGER OPERATIONS =================
+
+        string addVehicle(
+            in string managerID,
+            in string vehicleNumber,
+            in string vehicleType,
+            in string vehicleID,
+            in double price
+        );
+
+        string removeVehicle(
+            in string managerID,
+            in string vehicleID
+        );
+
+        string listAvailableVehicle(
+            in string managerID
+        );
+
+        // ================= CUSTOMER OPERATIONS =================
+
+        string reserveVehicle(
+            in string customerID,
+            in string vehicleID,
+            in string startDate,
+            in string endDate
+        );
+
+        string updateReservation(
+            in string customerID,
+            in string vehicleID,
+            in string newStartDate,
+            in string newEndDate
+        );
+
+        string sendAtomicUpdate(
+            in string vID,
+            in string cID,
+            in string start,
+            in string end
+        );
+
+        string cancelReservation(
+            in string customerID,
+            in string vehicleID
+        );
+
+        string findVehicle(
+            in string customerID,
+            in string vehicleType
+        );
+
+        string findLocalVehicle(
+            in string vtype
+        );
+    };
+};

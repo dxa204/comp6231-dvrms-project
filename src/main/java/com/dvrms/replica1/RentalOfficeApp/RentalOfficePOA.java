@@ -11,7 +11,7 @@ package com.dvrms.replica1.RentalOfficeApp;
 
 // --------------------
 public abstract class RentalOfficePOA extends org.omg.PortableServer.Servant
- implements RentalOfficeApp.RentalOfficeOperations, org.omg.CORBA.portable.InvokeHandler
+ implements RentalOfficeOperations, org.omg.CORBA.portable.InvokeHandler
 {
 
   // Constructors

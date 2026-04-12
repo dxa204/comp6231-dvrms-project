@@ -129,8 +129,8 @@ public class VehicleServer extends DVRMSPOA {
                     String msgID  = parts[1];
                     int    seqNum = Integer.parseInt(parts[2]);
  
-                    // ACK|<msgID> back to Sequencer immediately
-                    byte[] ack = ("ACK|" + msgID).getBytes();
+                    // ACK|<replicaId>|<msgID> back to Sequencer immediately
+                    byte[] ack = ("ACK|R" + replicaId + "|" + msgID).getBytes();
                     socket.send(new DatagramPacket(ack, ack.length, pkt.getAddress(), pkt.getPort()));
  
                     // Duplicate guard
@@ -179,34 +179,48 @@ public class VehicleServer extends DVRMSPOA {
  
         try {
             switch (method) {
+                case "add":
                 case "addVehicle":
                     // args: mID vnum vtype vID price
                     result = addVehicle(parts[6], parts[7], parts[8], parts[9],
                                         Double.parseDouble(parts[10]));
                     break;
+                case "remove":
                 case "removeVehicle":
                     // args: mID vID
                     result = removeVehicle(parts[6], parts[7]);
                     break;
+                case "list":
                 case "listVehicles":
+                case "listAvailableVehicles":
                     // args: mID
                     result = listAvailableVehicle(parts[6]);
                     break;
                 case "reserve":
+                case "reserveVehicle":
                     // args: cID vID start end
                     result = reserveVehicle(parts[6], parts[7], parts[8], parts[9]);
                     break;
                 case "update":
+                case "updateReservation":
                     // args: cID vID newStart newEnd
                     result = updateReservation(parts[6], parts[7], parts[8], parts[9]);
                     break;
                 case "cancel":
+                case "cancelReservation":
                     // args: cID vID
                     result = cancelReservation(parts[6], parts[7]);
                     break;
+                case "find":
                 case "findVehicle":
                     // args: cID vtype
                     result = findVehicle(parts[6], parts[7]);
+                    break;
+                case "remoteReserveVehicle":
+                case "remoteCancelReservation":
+                case "addToWaitingList":
+                case "getLocalVehiclesByType":
+                    result = "Unsupported operation in replica2 backend: " + method;
                     break;
                 default:
                     result = "Unknown method: " + method;
@@ -600,7 +614,7 @@ public class VehicleServer extends DVRMSPOA {
         ORB orb = ORB.init(new String[]{}, props);
         NamingContextExt nc = NamingContextExtHelper.narrow(
                 orb.resolve_initial_references("NameService"));
-        return DVRMSHelper.narrow(nc.resolve_str(targetCity));
+        return DVRMSHelper.narrow(nc.resolve_str(targetCity + "_" + replicaId));
     }
 
     /**

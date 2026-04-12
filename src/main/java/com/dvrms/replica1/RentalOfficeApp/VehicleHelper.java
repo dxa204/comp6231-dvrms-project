@@ -12,7 +12,7 @@ abstract public class VehicleHelper
 {
   private static String  _id = "IDL:RentalOfficeApp/Vehicle:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, RentalOfficeApp.Vehicle that)
+  public static void insert (org.omg.CORBA.Any a, Vehicle that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class VehicleHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static RentalOfficeApp.Vehicle extract (org.omg.CORBA.Any a)
+  public static Vehicle extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -62,7 +62,7 @@ abstract public class VehicleHelper
             "price",
             _tcOf_members0,
             null);
-          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (RentalOfficeApp.VehicleHelper.id (), "Vehicle", _members0);
+          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (VehicleHelper.id (), "Vehicle", _members0);
           __active = false;
         }
       }
@@ -75,9 +75,9 @@ abstract public class VehicleHelper
     return _id;
   }
 
-  public static RentalOfficeApp.Vehicle read (org.omg.CORBA.portable.InputStream istream)
+  public static Vehicle read (org.omg.CORBA.portable.InputStream istream)
   {
-    RentalOfficeApp.Vehicle value = new RentalOfficeApp.Vehicle ();
+    Vehicle value = new Vehicle ();
     value.vehicleID = istream.read_string ();
     value.vehicleNumber = istream.read_string ();
     value.vehicleType = istream.read_string ();
@@ -85,7 +85,7 @@ abstract public class VehicleHelper
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, RentalOfficeApp.Vehicle value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, Vehicle value)
   {
     ostream.write_string (value.vehicleID);
     ostream.write_string (value.vehicleNumber);

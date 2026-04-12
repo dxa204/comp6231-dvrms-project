@@ -11,30 +11,30 @@ package com.dvrms.replica1.RentalOfficeApp;
 // --------------------
 public final class RentalOfficeHolder implements org.omg.CORBA.portable.Streamable
 {
-  public RentalOfficeApp.RentalOffice value = null;
+  public RentalOffice value = null;
 
   public RentalOfficeHolder ()
   {
   }
 
-  public RentalOfficeHolder (RentalOfficeApp.RentalOffice initialValue)
+  public RentalOfficeHolder (RentalOffice initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = RentalOfficeApp.RentalOfficeHelper.read (i);
+    value = RentalOfficeHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    RentalOfficeApp.RentalOfficeHelper.write (o, value);
+    RentalOfficeHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return RentalOfficeApp.RentalOfficeHelper.type ();
+    return RentalOfficeHelper.type ();
   }
 
 }

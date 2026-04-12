@@ -74,7 +74,7 @@ public class UDPServer extends Thread {
 
             String result = resultBuilder.toString();
 
-            Response response = new Response(result);
+            Response response = new Response(requestID, replicaID, result);
 
             // ✅ Thread-safe insert
             responseMap.computeIfAbsent(requestID,

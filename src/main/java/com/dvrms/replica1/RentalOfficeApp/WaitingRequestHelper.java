@@ -12,7 +12,7 @@ abstract public class WaitingRequestHelper
 {
   private static String  _id = "IDL:RentalOfficeApp/WaitingRequest:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, RentalOfficeApp.WaitingRequest that)
+  public static void insert (org.omg.CORBA.Any a, WaitingRequest that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class WaitingRequestHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static RentalOfficeApp.WaitingRequest extract (org.omg.CORBA.Any a)
+  public static WaitingRequest extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -57,7 +57,7 @@ abstract public class WaitingRequestHelper
             "endDate",
             _tcOf_members0,
             null);
-          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (RentalOfficeApp.WaitingRequestHelper.id (), "WaitingRequest", _members0);
+          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (WaitingRequestHelper.id (), "WaitingRequest", _members0);
           __active = false;
         }
       }
@@ -70,16 +70,16 @@ abstract public class WaitingRequestHelper
     return _id;
   }
 
-  public static RentalOfficeApp.WaitingRequest read (org.omg.CORBA.portable.InputStream istream)
+  public static WaitingRequest read (org.omg.CORBA.portable.InputStream istream)
   {
-    RentalOfficeApp.WaitingRequest value = new RentalOfficeApp.WaitingRequest ();
+    WaitingRequest value = new WaitingRequest ();
     value.customerID = istream.read_string ();
     value.startDate = istream.read_string ();
     value.endDate = istream.read_string ();
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, RentalOfficeApp.WaitingRequest value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, WaitingRequest value)
   {
     ostream.write_string (value.customerID);
     ostream.write_string (value.startDate);

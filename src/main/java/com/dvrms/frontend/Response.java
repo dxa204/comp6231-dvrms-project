@@ -16,4 +16,10 @@ public class Response {
         this.replicaID = parts[2];
         this.result = parts[3];
     }
+
+    public Response(String requestID, String replicaID, String result) {
+        this.requestID = requestID;
+        this.replicaID = replicaID;
+        this.result = result;
+    }
 }

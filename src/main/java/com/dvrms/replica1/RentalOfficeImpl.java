@@ -1,7 +1,6 @@
 package com.dvrms.replica1;
 
-import RentalOfficeApp.*;
-import org.omg.CORBA.ORB;
+import com.dvrms.replica1.RentalOfficeApp.RentalOfficePOA;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -46,9 +45,6 @@ public class RentalOfficeImpl extends RentalOfficePOA {
     // logger
     private static Logger logger;
 
-    // ORB reference for remote calls
-    private ORB orb;
-
     /* ===================== CONSTRUCTOR ===================== */
 
     public RentalOfficeImpl(String officeID) throws IOException {
@@ -81,8 +77,8 @@ public class RentalOfficeImpl extends RentalOfficePOA {
         }
     }
 
-    public void setORB(ORB orb) {
-        this.orb = orb;
+    public void setORB(Object orb) {
+        // ORB is not used by this implementation directly.
     }
 
     /* ===================== RESERVE ===================== */

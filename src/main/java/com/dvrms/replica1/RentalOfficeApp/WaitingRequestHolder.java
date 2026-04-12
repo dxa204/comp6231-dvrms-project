@@ -9,30 +9,30 @@ package com.dvrms.replica1.RentalOfficeApp;
 
 public final class WaitingRequestHolder implements org.omg.CORBA.portable.Streamable
 {
-  public RentalOfficeApp.WaitingRequest value = null;
+  public WaitingRequest value = null;
 
   public WaitingRequestHolder ()
   {
   }
 
-  public WaitingRequestHolder (RentalOfficeApp.WaitingRequest initialValue)
+  public WaitingRequestHolder (WaitingRequest initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = RentalOfficeApp.WaitingRequestHelper.read (i);
+    value = WaitingRequestHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    RentalOfficeApp.WaitingRequestHelper.write (o, value);
+    WaitingRequestHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return RentalOfficeApp.WaitingRequestHelper.type ();
+    return WaitingRequestHelper.type ();
   }
 
 }

@@ -12,7 +12,7 @@ abstract public class ReservationHelper
 {
   private static String  _id = "IDL:RentalOfficeApp/Reservation:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, RentalOfficeApp.Reservation that)
+  public static void insert (org.omg.CORBA.Any a, Reservation that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class ReservationHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static RentalOfficeApp.Reservation extract (org.omg.CORBA.Any a)
+  public static Reservation extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -62,7 +62,7 @@ abstract public class ReservationHelper
             "endDate",
             _tcOf_members0,
             null);
-          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (RentalOfficeApp.ReservationHelper.id (), "Reservation", _members0);
+          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (ReservationHelper.id (), "Reservation", _members0);
           __active = false;
         }
       }
@@ -75,9 +75,9 @@ abstract public class ReservationHelper
     return _id;
   }
 
-  public static RentalOfficeApp.Reservation read (org.omg.CORBA.portable.InputStream istream)
+  public static Reservation read (org.omg.CORBA.portable.InputStream istream)
   {
-    RentalOfficeApp.Reservation value = new RentalOfficeApp.Reservation ();
+    Reservation value = new Reservation ();
     value.customerID = istream.read_string ();
     value.vehicleID = istream.read_string ();
     value.startDate = istream.read_string ();
@@ -85,7 +85,7 @@ abstract public class ReservationHelper
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, RentalOfficeApp.Reservation value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, Reservation value)
   {
     ostream.write_string (value.customerID);
     ostream.write_string (value.vehicleID);

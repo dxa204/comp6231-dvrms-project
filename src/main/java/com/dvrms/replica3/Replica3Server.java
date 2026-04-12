@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * Protocols preserved:
  *   Sequencer -> Replica: REQ|<msgId>|<seqNum>|<feHost>|<fePort>|<method>|<args...>
- *   Replica   -> Sequencer: ACK|<msgId>
+ *   Replica   -> Sequencer: ACK|<replicaId>|<msgId>
  *   Replica   -> FE:       RESULT|<msgId>|R3|<result>
  *
  *   RM <-> Replica:
@@ -98,7 +98,7 @@ public class Replica3Server {
     }
 
     private void acknowledgeSequencer(DatagramSocket socket, DatagramPacket packet, String msgId) throws IOException {
-        byte[] payload = (Config.MSG_ACK + "|" + msgId).getBytes(StandardCharsets.UTF_8);
+        byte[] payload = (Config.MSG_ACK + "|" + REPLICA_ID + "|" + msgId).getBytes(StandardCharsets.UTF_8);
         socket.send(new DatagramPacket(payload, payload.length, packet.getAddress(), packet.getPort()));
     }
 

@@ -7,7 +7,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.logging.*;
 
-import RentalOfficeApp.*;
+import com.dvrms.replica1.RentalOfficeApp.*;
 
 public class managerClient {
 
@@ -168,4 +168,3 @@ public class managerClient {
         }
     }
 }
-

@@ -93,7 +93,7 @@ public class Replica4Server {
         int seqNum = Integer.parseInt(parts[2]);
 
         // ACK immediately to sequencer
-        String ack = "ACK|" + msgId;
+        String ack = "ACK|R4|" + msgId;
         DatagramPacket ackPacket = new DatagramPacket(
                 ack.getBytes(StandardCharsets.UTF_8),
                 ack.length(),

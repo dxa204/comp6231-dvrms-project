@@ -9,30 +9,30 @@ package com.dvrms.replica1.RentalOfficeApp;
 
 public final class ReservationHolder implements org.omg.CORBA.portable.Streamable
 {
-  public RentalOfficeApp.Reservation value = null;
+  public Reservation value = null;
 
   public ReservationHolder ()
   {
   }
 
-  public ReservationHolder (RentalOfficeApp.Reservation initialValue)
+  public ReservationHolder (Reservation initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = RentalOfficeApp.ReservationHelper.read (i);
+    value = ReservationHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    RentalOfficeApp.ReservationHelper.write (o, value);
+    ReservationHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return RentalOfficeApp.ReservationHelper.type ();
+    return ReservationHelper.type ();
   }
 
 }

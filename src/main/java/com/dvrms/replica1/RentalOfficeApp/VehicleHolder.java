@@ -9,30 +9,30 @@ package com.dvrms.replica1.RentalOfficeApp;
 
 public final class VehicleHolder implements org.omg.CORBA.portable.Streamable
 {
-  public RentalOfficeApp.Vehicle value = null;
+  public Vehicle value = null;
 
   public VehicleHolder ()
   {
   }
 
-  public VehicleHolder (RentalOfficeApp.Vehicle initialValue)
+  public VehicleHolder (Vehicle initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = RentalOfficeApp.VehicleHelper.read (i);
+    value = VehicleHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    RentalOfficeApp.VehicleHelper.write (o, value);
+    VehicleHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return RentalOfficeApp.VehicleHelper.type ();
+    return VehicleHelper.type ();
   }
 
 }

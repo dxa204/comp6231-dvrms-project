@@ -9,30 +9,30 @@ package com.dvrms.replica1.RentalOfficeApp;
 
 public final class CustomerBudgetHolder implements org.omg.CORBA.portable.Streamable
 {
-  public RentalOfficeApp.CustomerBudget value = null;
+  public CustomerBudget value = null;
 
   public CustomerBudgetHolder ()
   {
   }
 
-  public CustomerBudgetHolder (RentalOfficeApp.CustomerBudget initialValue)
+  public CustomerBudgetHolder (CustomerBudget initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = RentalOfficeApp.CustomerBudgetHelper.read (i);
+    value = CustomerBudgetHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    RentalOfficeApp.CustomerBudgetHelper.write (o, value);
+    CustomerBudgetHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return RentalOfficeApp.CustomerBudgetHelper.type ();
+    return CustomerBudgetHelper.type ();
   }
 
 }

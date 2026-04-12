@@ -10,7 +10,7 @@ package com.dvrms.replica1.RentalOfficeApp;
 
 
 // --------------------
-public class _RentalOfficeStub extends org.omg.CORBA.portable.ObjectImpl implements RentalOfficeApp.RentalOffice
+public class _RentalOfficeStub extends org.omg.CORBA.portable.ObjectImpl implements RentalOffice
 {
 
 

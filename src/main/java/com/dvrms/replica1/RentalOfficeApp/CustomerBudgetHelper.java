@@ -12,7 +12,7 @@ abstract public class CustomerBudgetHelper
 {
   private static String  _id = "IDL:RentalOfficeApp/CustomerBudget:1.0";
 
-  public static void insert (org.omg.CORBA.Any a, RentalOfficeApp.CustomerBudget that)
+  public static void insert (org.omg.CORBA.Any a, CustomerBudget that)
   {
     org.omg.CORBA.portable.OutputStream out = a.create_output_stream ();
     a.type (type ());
@@ -20,7 +20,7 @@ abstract public class CustomerBudgetHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static RentalOfficeApp.CustomerBudget extract (org.omg.CORBA.Any a)
+  public static CustomerBudget extract (org.omg.CORBA.Any a)
   {
     return read (a.create_input_stream ());
   }
@@ -52,7 +52,7 @@ abstract public class CustomerBudgetHelper
             "budgetAmount",
             _tcOf_members0,
             null);
-          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (RentalOfficeApp.CustomerBudgetHelper.id (), "CustomerBudget", _members0);
+          __typeCode = org.omg.CORBA.ORB.init ().create_struct_tc (CustomerBudgetHelper.id (), "CustomerBudget", _members0);
           __active = false;
         }
       }
@@ -65,15 +65,15 @@ abstract public class CustomerBudgetHelper
     return _id;
   }
 
-  public static RentalOfficeApp.CustomerBudget read (org.omg.CORBA.portable.InputStream istream)
+  public static CustomerBudget read (org.omg.CORBA.portable.InputStream istream)
   {
-    RentalOfficeApp.CustomerBudget value = new RentalOfficeApp.CustomerBudget ();
+    CustomerBudget value = new CustomerBudget ();
     value.customerID = istream.read_string ();
     value.budgetAmount = istream.read_double ();
     return value;
   }
 
-  public static void write (org.omg.CORBA.portable.OutputStream ostream, RentalOfficeApp.CustomerBudget value)
+  public static void write (org.omg.CORBA.portable.OutputStream ostream, CustomerBudget value)
   {
     ostream.write_string (value.customerID);
     ostream.write_double (value.budgetAmount);

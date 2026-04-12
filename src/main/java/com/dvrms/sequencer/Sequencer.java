@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * Message formats (pipe-delimited):
  *   Incoming from FE:    SEQ_REQ|<msgID>|<feHost>|<fePort>|<method>|<args...>
  *   Outgoing to Replicas: REQ|<msgID>|<seqNum>|<feHost>|<fePort>|<method>|<args...>
- *   Incoming ACK:         ACK|<msgID>
+ *   Incoming ACK:         ACK|<replicaID>|<msgID>
  *   Incoming from RM:     UPDATE|<oldReplicaID>|<newHost>|<newPort>
  */
 public class Sequencer {
@@ -41,6 +41,10 @@ public class Sequencer {
 
     // ── Retransmission log: seqNum → original message (for potential replay) ──
     private final ConcurrentHashMap<Integer, String> retransmissionLog = new ConcurrentHashMap<>();
+
+    // ── Single-thread dispatcher preserves FE request order while keeping
+    //    the UDP receive loop free to process ACKs immediately. ──
+    private final ExecutorService dispatchPool = Executors.newSingleThreadExecutor();
 
     // ── Thread pool for parallel multicast to replicas ──
     private final ExecutorService multicastPool = Executors.newFixedThreadPool(4);
@@ -83,11 +87,6 @@ public class Sequencer {
                 senders.put(target.getReplicaId(), new ReliableUDPSender(target, socket, rmNotifier));
             }
 
-            // Start a background thread to listen for ACKs
-            Thread ackListener = new Thread(this::listenForAcks, "ACK-Listener");
-            ackListener.setDaemon(true);
-            ackListener.start();
-
             LOG.info("[Sequencer] Started on port " + Config.SEQUENCER_PORT);
             LOG.info("[Sequencer] Replica targets: " + replicaTargets.values());
 
@@ -114,12 +113,10 @@ public class Sequencer {
                 LOG.info("[Sequencer] Received: " + message);
 
                 if (message.startsWith(Config.MSG_SEQ_REQ)) {
-                    handleClientRequest(message);
+                    dispatchPool.submit(() -> handleClientRequest(message));
                 } else if (message.startsWith(Config.MSG_UPDATE)) {
-                    handleUpdateTargets(message);
+                    dispatchPool.submit(() -> handleUpdateTargets(message));
                 } else if (message.startsWith(Config.MSG_ACK)) {
-                    // ACKs are handled by the ACK listener thread,
-                    // but if they arrive on the main socket they're routed here
                     handleAck(message);
                 } else {
                     LOG.warning("[Sequencer] Unknown message type: " + message);
@@ -232,28 +229,30 @@ public class Sequencer {
 
     /**
      * Route an ACK message to the appropriate sender.
-     * Format: ACK|<msgID>
+     * Preferred format: ACK|<replicaID>|<msgID>
+     * Legacy format ACK|<msgID> is still accepted but cannot distinguish which
+     * replica replied, so it is kept only as a backwards-compatible fallback.
      */
     private void handleAck(String message) {
         String[] parts = message.split("\\" + Config.DELIMITER);
-        if (parts.length < 2) return;
-        String msgId = parts[1];
-
-        // Broadcast to all senders — only the one with the matching pending ACK will react
-        for (ReliableUDPSender sender : senders.values()) {
-            sender.handleAck(msgId);
+        if (parts.length >= 3) {
+            String replicaId = parts[1];
+            String msgId = parts[2];
+            ReliableUDPSender sender = senders.get(replicaId);
+            if (sender != null) {
+                sender.handleAck(msgId);
+            } else {
+                LOG.warning("[Sequencer] ACK received for unknown replica " + replicaId + ": " + message);
+            }
+            return;
         }
-    }
 
-    /**
-     * Background thread that listens for ACK messages from replicas.
-     * Since we use a single DatagramSocket, ACKs arrive on the same socket.
-     * This thread is handled via the main listen() loop dispatching ACK messages.
-     */
-    private void listenForAcks() {
-        // ACKs are handled in the main listen() loop since they share the same socket.
-        // This thread is reserved for a separate ACK socket if needed in the future.
-        LOG.info("[Sequencer] ACK listener thread started (ACKs handled via main loop).");
+        if (parts.length == 2) {
+            String msgId = parts[1];
+            for (ReliableUDPSender sender : senders.values()) {
+                sender.handleAck(msgId);
+            }
+        }
     }
 
     private int getActiveReplicaCount() {
@@ -266,6 +265,7 @@ public class Sequencer {
 
     public void stop() {
         running = false;
+        dispatchPool.shutdown();
         multicastPool.shutdown();
         if (socket != null && !socket.isClosed()) {
             socket.close();

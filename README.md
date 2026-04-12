@@ -53,6 +53,18 @@ java -cp out com.dvrms.sequencer.Sequencer
 java -cp out com.dvrms.sequencer.SequencerTest
 ```
 
+### Run the Sequencer Test with the helper script
+```bash
+./scripts/run-sequencer-test.sh
+```
+
+This script:
+- compiles the Sequencer test harness into `out/sequencer-test`
+- runs `com.dvrms.sequencer.SequencerTest`
+- expects to bind local UDP ports `5000`, `6001`-`6004`, and `7001`-`7004`
+
+If those ports are already in use, stop the conflicting process before rerunning the script.
+
 ## Communication Protocol
 
 All inter-component communication uses **UDP** with pipe-delimited ASCII messages.
@@ -62,7 +74,7 @@ All inter-component communication uses **UDP** with pipe-delimited ASCII message
 |---|---|---|
 | CLIENT_REQUEST | FE → Sequencer | `SEQ_REQ\|<msgID>\|<feHost>\|<fePort>\|<method>\|<args...>` |
 | SEQUENCED_REQUEST | Sequencer → Replicas | `REQ\|<msgID>\|<seqNum>\|<feHost>\|<fePort>\|<method>\|<args...>` |
-| ACK | Replica → Sequencer | `ACK\|<msgID>` |
+| ACK | Replica → Sequencer | `ACK\|<replicaID>\|<msgID>` |
 | UPDATE_TARGETS | RM → Sequencer | `UPDATE\|<oldReplicaID>\|<newHost>\|<newPort>` |
 | FAULT_REPORT | FE → RM | `FAULT\|<replicaID>\|<seqNum>` |
 | CRASH_SUSPECT | FE/Sequencer → RM | `CRASH\|<replicaID>` |

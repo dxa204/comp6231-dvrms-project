@@ -27,58 +27,58 @@ public class FrontEndImpl extends FrontEndPOA {
     // ----- Manager Operations -----
     @Override
     public String addVehicle(String managerID, String vehicleNumber, String vehicleType, String vehicleID, double price) {
-        return processRequest("add", managerID, vehicleNumber, vehicleType, vehicleID, String.valueOf(price));
+        return processRequest("addVehicle", managerID, vehicleNumber, vehicleType, vehicleID, String.valueOf(price));
     }
 
     @Override
     public String removeVehicle(String managerID, String vehicleID) {
-        return processRequest("remove", managerID, vehicleID);
+        return processRequest("removeVehicle", managerID, vehicleID);
     }
 
     @Override
     public String listAvailableVehicles(String managerID) {
-        return processRequest("list", managerID);
+        return processRequest("listAvailableVehicles", managerID);
     }
 
     // ----- Customer Operations -----
     @Override
     public String reserveVehicle(String customerID, String vehicleType, String startDate, String endDate) {
-        return processRequest("reserve", customerID, vehicleType, startDate, endDate);
+        return processRequest("reserveVehicle", customerID, vehicleType, startDate, endDate);
     }
 
     @Override
     public String remoteReserveVehicle(String customerID, String vehicleType, String startDate, String endDate, double budgetAmount) {
-        return processRequest("remoteReserve", customerID, vehicleType, startDate, endDate, String.valueOf(budgetAmount));
+        return processRequest("remoteReserveVehicle", customerID, vehicleType, startDate, endDate, String.valueOf(budgetAmount));
     }
 
     @Override
     public String updateReservation(String customerID, String vehicleID, String newStartDate, String newEndDate) {
-        return processRequest("update", customerID, vehicleID, newStartDate, newEndDate);
+        return processRequest("updateReservation", customerID, vehicleID, newStartDate, newEndDate);
     }
 
     @Override
     public String cancelReservation(String customerID, String vehicleID) {
-        return processRequest("cancel", customerID, vehicleID);
+        return processRequest("cancelReservation", customerID, vehicleID);
     }
 
     @Override
     public String remoteCancelReservation(String customerID, String vehicleID, double budgetAmount) {
-        return processRequest("remoteCancel", customerID, vehicleID);
+        return processRequest("remoteCancelReservation", customerID, vehicleID, String.valueOf(budgetAmount));
     }
 
     @Override
     public String findVehicle(String customerID, String vehicleType) {
-        return processRequest("find", customerID, vehicleType);
+        return processRequest("findVehicle", customerID, vehicleType);
     }
 
     @Override
     public String addToWaitingList(String customerID, String vehicleID, String startDate, String endDate) {
-        return processRequest("waitlist", customerID, vehicleID, startDate, endDate);
+        return processRequest("addToWaitingList", customerID, vehicleID, startDate, endDate);
     }
 
     @Override
     public String getLocalVehiclesByType(String vehicleType) {
-        return processRequest("local", vehicleType);
+        return processRequest("getLocalVehiclesByType", vehicleType);
     }
 
     // =========================

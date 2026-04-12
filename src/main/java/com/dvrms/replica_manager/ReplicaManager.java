@@ -1,5 +1,7 @@
 package com.dvrms.replica_manager;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -486,17 +488,22 @@ public class ReplicaManager {
             for (String city : cities) {
                 String rKey = replicaId + "_" + city;
                 ReplicaInfo cityInfo = replicasByKey.getOrDefault(rKey, info);
- 
+
                 List<String> cmd = new ArrayList<>();
                 cmd.add("java");
+                String classpath = System.getProperty("java.class.path");
+                if (classpath != null && !classpath.isEmpty()) {
+                    cmd.add("-cp");
+                    cmd.add(classpath);
+                }
                 if (!orbHost.equals("localhost"))
                     cmd.add("-Dorb.host=" + orbHost);
-                cmd.add("VehicleServer");
+                cmd.add("com.dvrms.replica2.VehicleServer");
                 cmd.addAll(Arrays.asList(cityInfo.launchArgs));
  
                 lastProcess = new ProcessBuilder(cmd).inheritIO().start();
                 System.out.println("[RM " + rmId + "] Restarted " + city
-                        + " server for replica " + replicaId + " (pid=" + lastProcess.pid() + ")");
+                        + " server for replica " + replicaId + " (pid=" + getProcessId(lastProcess) + ")");
             }
  
             Thread.sleep(3000); // wait for all new processes to bind their ports
@@ -509,7 +516,7 @@ public class ReplicaManager {
                 }
             info.alive = true;
             info.faultCount.set(0);
-            long finalPid = (lastProcess != null) ? lastProcess.pid() : -1;
+            long finalPid = getProcessId(lastProcess);
             System.out.println("[RM " + rmId + "] All city servers for replica "
                     + replicaId + " restarted (last pid=" + finalPid + ")");
  
@@ -537,6 +544,40 @@ public class ReplicaManager {
     // -----------------------------------------------------------------------
     // Reliable UDP helpers
     // -----------------------------------------------------------------------
+
+    /**
+     * Best-effort process id lookup for logging.
+     *
+     * Java 9+ exposes Process.pid(); Java 8 does not. This RM targets Java 8,
+     * so we call pid() reflectively when available and otherwise fall back to
+     * the private "pid" field used by the JDK's Unix process implementations.
+     */
+    private long getProcessId(Process process) {
+        if (process == null) return -1L;
+
+        try {
+            Method pidMethod = Process.class.getMethod("pid");
+            Object value = pidMethod.invoke(process);
+            if (value instanceof Number) {
+                return ((Number) value).longValue();
+            }
+        } catch (Exception ignored) {
+            // Expected on Java 8; use the legacy fallback below.
+        }
+
+        try {
+            Field pidField = process.getClass().getDeclaredField("pid");
+            pidField.setAccessible(true);
+            Object value = pidField.get(process);
+            if (value instanceof Number) {
+                return ((Number) value).longValue();
+            }
+        } catch (Exception ignored) {
+            // PID is diagnostic only; unknown implementations can safely return -1.
+        }
+
+        return -1L;
+    }
  
     /** Send and wait for ACK. 500 ms timeout, 5 retries. */
     private void sendUDP(String host, int port, String message) throws Exception {

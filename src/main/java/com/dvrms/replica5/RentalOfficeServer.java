@@ -1,3 +1,5 @@
+package com.dvrms.replica5;
+
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.*;
 import org.omg.PortableServer.*;

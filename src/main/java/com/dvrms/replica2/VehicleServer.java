@@ -605,22 +605,31 @@ public class VehicleServer extends DVRMSPOA {
 
     /**
      * Usage:
-     *   java -Dorb.host=<nameservice-ip> VehicleServer <city> <replicaId> <rmHost> <rmPort>
+     *   java [-Dorb.host=<ns-ip>] [-Dlisten.port=<port>] \
+     *        VehicleServer <city> <replicaId> <rmHost> <rmPort>
      *
      * Arguments:
-     *   city       City code this replica serves: MTL, WPG, or BNF
-     *   replicaId  Integer 1-4 (determines UDP listen port: 6000 + replicaId)
+     *   city       City code: MTL, WPG, or BNF
+     *   replicaId  Integer 1-4 (replica group index; one per host)
      *   rmHost     IP/hostname of the Replica Manager for this replica
      *   rmPort     RM listen port: 7000 + replicaId (e.g. 7001 for RM1)
      *
-     * JVM system property:
-     *   -Dorb.host=<ip>   Host running orbd/tnameserv (default: localhost)
+     * JVM system properties:
+     *   -Dorb.host=<ip>      Host running orbd/tnameserv (default: localhost)
+     *   -Dlisten.port=<n>    Override computed UDP listen port (optional)
      *
-     * Single-machine test (all on localhost):
+     * Port formula (city offset + replicaId):
+     *   MTL: 6001-6004   WPG: 6011-6014   BNF: 6021-6024
+     *
+     * Single-machine test:
      *   java VehicleServer MTL 1 localhost 7001
+     *   java VehicleServer WPG 1 localhost 7001
+     *   java VehicleServer BNF 1 localhost 7001
      *
-     * Multi-host: Replica 1 on host-a, NameService on host-ns, RM1 on host-rm1:
-     *   java -Dorb.host=host-ns VehicleServer MTL 1 host-rm1 7001
+     * Multi-host, 3 cities per host (host-a runs all city replicas for replicaId=1):
+     *   java -Dorb.host=ns-ip VehicleServer MTL 1 rm1-ip 7001
+     *   java -Dorb.host=ns-ip VehicleServer WPG 1 rm1-ip 7001
+     *   java -Dorb.host=ns-ip VehicleServer BNF 1 rm1-ip 7001
      */
     public static void main(String[] args) throws Exception {
         if (args.length < 4) {
@@ -628,13 +637,29 @@ public class VehicleServer extends DVRMSPOA {
             System.exit(1);
         }
  
-        String city = args[0];
-        int replicaId = Integer.parseInt(args[1]);
-        String rmHost = args[2];
-        int rmPort = Integer.parseInt(args[3]);
+        String city      = args[0];
+        int    replicaId = Integer.parseInt(args[1]);
+        String rmHost    = args[2];
+        int    rmPort    = Integer.parseInt(args[3]);
  
-        // listenPort is fixed by the team protocol doc: 6000 + replicaId
-        int listenPort = 6000 + replicaId;
+        // Port formula: city offset + replicaId
+        //   MTL replicas: 6001, 6002, 6003, 6004
+        //   WPG replicas: 6011, 6012, 6013, 6014
+        //   BNF replicas: 6021, 6022, 6023, 6024
+        //
+        // This allows 3 city servers to run on the same host without port collisions.
+        // Can be overridden by passing -Dlisten.port=<port> for non-standard deployments.
+        int cityOffset;
+        switch (city.toUpperCase()) {
+            case "MTL": cityOffset = 6000; break;
+            case "WPG": cityOffset = 6010; break;
+            case "BNF": cityOffset = 6020; break;
+            default:
+                System.err.println("Unknown city: " + city + ". Must be MTL, WPG, or BNF.");
+                System.exit(1);
+                cityOffset = 0; // unreachable, keeps compiler happy
+        }
+        int listenPort = Integer.getInteger("listen.port", cityOffset + replicaId);
  
         // CORBA boilerplate.
         // Pass -Dorb.host=<nameservice-ip> to point at a remote Name Service.

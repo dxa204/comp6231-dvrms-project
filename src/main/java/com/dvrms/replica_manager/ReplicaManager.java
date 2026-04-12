@@ -87,7 +87,13 @@ public class ReplicaManager {
     private final int listenPort;  // 7000 + rmId
  
     // All replicas known to this RM: replicaId -> ReplicaInfo
+    // (When a host runs 3 city servers per replicaId, the last REGISTER wins here;
+    //  use replicasByKey for city-specific lookups.)
     private final ConcurrentHashMap<Integer, ReplicaInfo> replicas = new ConcurrentHashMap<>();
+ 
+    // Fine-grained tracking: "<replicaId>_<city>" -> ReplicaInfo
+    // Allows the RM to restart only the crashed city server, not all three.
+    private final ConcurrentHashMap<String, ReplicaInfo> replicasByKey = new ConcurrentHashMap<>();
  
     // Peer RMs: rmId -> InetSocketAddress
     private final ConcurrentHashMap<Integer, InetSocketAddress> peerRMs = new ConcurrentHashMap<>();
@@ -217,15 +223,19 @@ public class ReplicaManager {
         String city       = parts[2];
         int    listenPort = Integer.parseInt(parts[3]);
  
-        // Build restart command: java -Dorb.host=<ns> VehicleServer <city> <id> <rmHost> <rmPort>
-        // The RM host seen from the replica's perspective is this machine's address.
-        // We use srcHost as a best-effort guess; override with -Drm.host if needed.
+        // The RM host seen by replicas is this machine's public address.
+        // Override with -Drm.host=<ip> if "localhost" is not routable by the replica.
         String rmPublicHost = System.getProperty("rm.host", "localhost");
  
+        // launchArgs for a single city server: city, replicaId, rmHost, rmPort
         String[] launchArgs = { city, String.valueOf(id), rmPublicHost, String.valueOf(this.listenPort) };
  
+        // Key: "replicaId_city" so each (replica, city) pair has its own entry.
+        // When a host runs 3 city servers for the same replicaId, all three are tracked.
+        String key = id + "_" + city;
         ReplicaInfo info = new ReplicaInfo(id, city, srcHost, listenPort, launchArgs);
-        replicas.put(id, info);
+        replicas.put(id, info);           // plain replicaId key for backward compat
+        replicasByKey.put(key, info);     // city-scoped key for per-city operations
         System.out.println("[RM " + rmId + "] Registered " + info);
     }
  
@@ -333,6 +343,16 @@ public class ReplicaManager {
      * This is sent AFTER the owning RM has successfully restarted the process.
      */
     private void handleRecoveryNotice(int replicaId, String newHost, int newPort) {
+        // Update all city entries for this replicaId
+        for (Map.Entry<String, ReplicaInfo> e : replicasByKey.entrySet()) {
+            if (e.getKey().startsWith(replicaId + "_")) {
+                e.getValue().host    = newHost;
+                e.getValue().alive   = true;
+                e.getValue().faultCount.set(0);
+                // Note: each city server has its own port derived from city+replicaId;
+                // newPort from RECOVER is the MTL port; WPG/BNF are offset accordingly.
+            }
+        }
         ReplicaInfo info = replicas.get(replicaId);
         if (info != null) {
             info.host        = newHost;
@@ -452,25 +472,46 @@ public class ReplicaManager {
             // Step 2: Give the port time to be released
             Thread.sleep(1500);
  
-            // Step 3: Spawn fresh VehicleServer process
-            List<String> cmd = new ArrayList<>();
-            cmd.add("java");
-            // Forward the orb.host system property to the new process
+            // Step 3: Spawn fresh VehicleServer processes — one per city.
+            // If this host runs all 3 city servers for this replicaId, restart each.
             String orbHost = System.getProperty("orb.host", "localhost");
-            if (!orbHost.equals("localhost"))
-                cmd.add("-Dorb.host=" + orbHost);
-            cmd.add("VehicleServer");
-            cmd.addAll(Arrays.asList(info.launchArgs));
+            List<String> cities = new ArrayList<>();
+            for (String key : replicasByKey.keySet()) {
+                if (key.startsWith(replicaId + "_"))
+                    cities.add(key.substring(key.indexOf('_') + 1));
+            }
+            if (cities.isEmpty()) cities.add(info.city); // fallback: single-city mode
  
-            Process p = new ProcessBuilder(cmd).inheritIO().start();
-            Thread.sleep(3000); // wait for the new process to bind its port
+            Process lastProcess = null;
+            for (String city : cities) {
+                String rKey = replicaId + "_" + city;
+                ReplicaInfo cityInfo = replicasByKey.getOrDefault(rKey, info);
  
-            // Step 4: Update our own record
-            // The port stays the same (6000 + replicaId); the host too.
+                List<String> cmd = new ArrayList<>();
+                cmd.add("java");
+                if (!orbHost.equals("localhost"))
+                    cmd.add("-Dorb.host=" + orbHost);
+                cmd.add("VehicleServer");
+                cmd.addAll(Arrays.asList(cityInfo.launchArgs));
+ 
+                lastProcess = new ProcessBuilder(cmd).inheritIO().start();
+                System.out.println("[RM " + rmId + "] Restarted " + city
+                        + " server for replica " + replicaId + " (pid=" + lastProcess.pid() + ")");
+            }
+ 
+            Thread.sleep(3000); // wait for all new processes to bind their ports
+ 
+            // Step 4: Mark all city replicas for this replicaId as alive
+            for (String key : replicasByKey.keySet())
+                if (key.startsWith(replicaId + "_")) {
+                    replicasByKey.get(key).alive = true;
+                    replicasByKey.get(key).faultCount.set(0);
+                }
             info.alive = true;
             info.faultCount.set(0);
-            System.out.println("[RM " + rmId + "] Replica " + replicaId
-                    + " restarted (pid=" + p + ")");
+            long finalPid = (lastProcess != null) ? lastProcess.pid() : -1;
+            System.out.println("[RM " + rmId + "] All city servers for replica "
+                    + replicaId + " restarted (last pid=" + finalPid + ")");
  
             // Step 5: Notify Sequencer -- UPDATE|<oldId>|<newHost>|<newPort>
             String updateMsg = "UPDATE|" + replicaId + "|" + info.host + "|" + info.listenPort;
@@ -556,16 +597,21 @@ public class ReplicaManager {
      * Single-machine test (all on localhost):
      *   java ReplicaManager 1 2 localhost 7002 3 localhost 7003 4 localhost 7004
      *
-     * Multi-host example (4 machines: rm1=10.0.0.1 rm2=10.0.0.2 ...):
-     *   On 10.0.0.1:
+     * Multi-host, one city per replica (original layout):
+     *   On 10.0.0.1 (RM1):
      *     java -Dsequencer.host=10.0.0.5 -Drm.host=10.0.0.1 \
      *          ReplicaManager 1 2 10.0.0.2 7002 3 10.0.0.3 7003 4 10.0.0.4 7004
      *
-     *   On 10.0.0.2:
-     *     java -Dsequencer.host=10.0.0.5 -Drm.host=10.0.0.2 \
-     *          ReplicaManager 2 1 10.0.0.1 7001 3 10.0.0.3 7003 4 10.0.0.4 7004
-     *
-     *   (repeat pattern for RM3 on 10.0.0.3 and RM4 on 10.0.0.4)
+     * Multi-host, ALL 3 cities per host (each host runs MTL+WPG+BNF replicas):
+     *   On 10.0.0.1 (RM1 — manages Replica1 for all three cities):
+     *     java -Dsequencer.host=10.0.0.5 -Drm.host=10.0.0.1 \
+     *          ReplicaManager 1 2 10.0.0.2 7002 3 10.0.0.3 7003 4 10.0.0.4 7004
+     *   Then launch 3 VehicleServer processes on the same host:
+     *     java -Dorb.host=10.0.0.5 VehicleServer MTL 1 10.0.0.1 7001
+     *     java -Dorb.host=10.0.0.5 VehicleServer WPG 1 10.0.0.1 7001
+     *     java -Dorb.host=10.0.0.5 VehicleServer BNF 1 10.0.0.1 7001
+     *   All three REGISTER with RM1 -- RM1 will restart all three on failure.
+     *   (Repeat on 10.0.0.2 with replicaId=2, 10.0.0.3 with 3, 10.0.0.4 with 4)
      */
     public static void main(String[] args) throws Exception {
         if (args.length < 1) {

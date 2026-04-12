@@ -1,7 +1,9 @@
 package com.dvrms.replica4;
 
+import com.dvrms.common.Config;
 import com.dvrms.common.InitialData;
 
+import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -10,7 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Replica4Server {
 
-    private static final int REPLICA_PORT = 6004;
+    private static final String REPLICA_ID = "R4";
+    private static final int REPLICA_ID_INT = 4;
+    private static final int REPLICA_PORT = Config.REPLICA_4_PORT;
 
     private final OfficeServer mtl = new OfficeServer(OfficeServer.Office.MTL, 7401);
     private final OfficeServer wpg = new OfficeServer(OfficeServer.Office.WPG, 7402);
@@ -33,7 +37,10 @@ public class Replica4Server {
 
 
         try (DatagramSocket socket = new DatagramSocket(REPLICA_PORT)) {
-            System.out.println("Replica 4 listening on port " + REPLICA_PORT);
+            System.out.println("[" + REPLICA_ID + "] listening on port " + REPLICA_PORT);
+
+            // Announce ourselves to every RM now that the listen socket is bound.
+            registerWithReplicaManagers();
 
             byte[] buf = new byte[4096];
 
@@ -41,10 +48,39 @@ public class Replica4Server {
                 DatagramPacket req = new DatagramPacket(buf, buf.length);
                 socket.receive(req);
 
-                String msg = new String(req.getData(), 0, req.getLength(), StandardCharsets.UTF_8);
-                handleReplicaRequest(msg, socket, req);
+                String msg = new String(req.getData(), 0, req.getLength(), StandardCharsets.UTF_8).trim();
+                handleIncoming(msg, socket, req);
             }
         }
+    }
+
+    private void handleIncoming(String msg, DatagramSocket socket, DatagramPacket req) throws Exception {
+        if (msg.startsWith("REQ|")) {
+            handleReplicaRequest(msg, socket, req);
+            return;
+        }
+        if (msg.startsWith("PING|")) {
+            handlePing(socket, req);
+            return;
+        }
+        if (msg.startsWith("CRASH|")) {
+            handleCrash(msg);
+            return;
+        }
+        // Unknown — ignore silently
+    }
+
+    private void handlePing(DatagramSocket socket, DatagramPacket req) throws IOException {
+        byte[] out = "PONG".getBytes(StandardCharsets.UTF_8);
+        socket.send(new DatagramPacket(out, out.length, req.getAddress(), req.getPort()));
+    }
+
+    private void handleCrash(String msg) {
+        System.out.println("[" + REPLICA_ID + "] received " + msg + " from RM — shutting down");
+        mtl.shutdown();
+        wpg.shutdown();
+        bnf.shutdown();
+        System.exit(0);
     }
 
     private void handleReplicaRequest(String msg, DatagramSocket socket, DatagramPacket req) throws Exception {
@@ -146,5 +182,44 @@ public class Replica4Server {
         bnf.seed(InitialData.getBNFData());
 
         System.out.println("Replica 4 seeded successfully");
+    }
+
+    private void registerWithReplicaManagers() {
+        String message = "REGISTER|" + REPLICA_ID_INT + "|ALL|" + REPLICA_PORT;
+        int[] rmPorts = {
+                Config.RM_1_PORT,
+                Config.RM_2_PORT,
+                Config.RM_3_PORT,
+                Config.RM_4_PORT
+        };
+
+        for (int port : rmPorts) {
+            boolean acked = sendReliableToRM("localhost", port, message);
+            System.out.println("[" + REPLICA_ID + "] REGISTER -> RM@" + port
+                    + " " + (acked ? "ACKed" : "no ACK after retries"));
+        }
+    }
+
+    private boolean sendReliableToRM(String host, int port, String message) {
+        byte[] data = message.getBytes(StandardCharsets.UTF_8);
+        try (DatagramSocket sock = new DatagramSocket()) {
+            sock.setSoTimeout(Config.ACK_TIMEOUT_MS);
+            InetAddress addr = InetAddress.getByName(host);
+            for (int attempt = 1; attempt <= Config.MAX_RETRIES; attempt++) {
+                sock.send(new DatagramPacket(data, data.length, addr, port));
+                try {
+                    byte[] buf = new byte[128];
+                    DatagramPacket ack = new DatagramPacket(buf, buf.length);
+                    sock.receive(ack);
+                    String reply = new String(ack.getData(), 0, ack.getLength(), StandardCharsets.UTF_8).trim();
+                    if (reply.startsWith("ACK")) return true;
+                } catch (SocketTimeoutException ignored) {
+                    // retry
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("[" + REPLICA_ID + "] sendReliableToRM failed: " + e.getMessage());
+        }
+        return false;
     }
 }

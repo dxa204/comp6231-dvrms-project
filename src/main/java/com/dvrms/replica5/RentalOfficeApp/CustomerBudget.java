@@ -1,4 +1,4 @@
-package package com.dvrms.replica5.RentalOfficeApp;
+package com.dvrms.replica5.RentalOfficeApp;
 
 
 /**

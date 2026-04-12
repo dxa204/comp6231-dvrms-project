@@ -1,3 +1,5 @@
+package com.dvrms.replica5;
+
 import java.time.LocalDate;
 
 public class WaitingRequest {

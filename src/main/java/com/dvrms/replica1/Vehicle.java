@@ -1,4 +1,4 @@
-package com.dvrms.replica5;
+package com.dvrms.replica1;
 
 public class Vehicle {
 

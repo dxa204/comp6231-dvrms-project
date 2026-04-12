@@ -234,7 +234,7 @@ public class ReplicaManager {
         // When a host runs 3 city servers for the same replicaId, all three are tracked.
         String key = id + "_" + city;
         ReplicaInfo info = new ReplicaInfo(id, city, srcHost, listenPort, launchArgs);
-        replicas.put(id, info);           // plain replicaId key for backward compat
+        replicas.put(id, info);           // plain replicaId key for backward compatibility
         replicasByKey.put(key, info);     // city-scoped key for per-city operations
         System.out.println("[RM " + rmId + "] Registered " + info);
     }
@@ -310,7 +310,7 @@ public class ReplicaManager {
     /**
      * STATUS|<suspectReplicaId>|<OK|FAULTY|NO_RESPONSE>   (from peer RM, step 2)
      * Accumulate peer observations. When we have MAJORITY votes that are NOT "OK",
-     * the failure is confirmed and we proceed with replacement.
+     * the failure is confirmed, and we proceed with replacement.
      */
     private void handleStatusReply(int suspectReplicaId, String observation) {
         String key = "check_" + suspectReplicaId;

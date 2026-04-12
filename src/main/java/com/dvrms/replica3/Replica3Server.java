@@ -14,45 +14,35 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Replica 3 — active replica driven by the Sequencer.
+ * Replica 3 server process.
  *
+ * Protocols preserved:
  *   Sequencer -> Replica: REQ|<msgId>|<seqNum>|<feHost>|<fePort>|<method>|<args...>
  *   Replica   -> Sequencer: ACK|<msgId>
  *   Replica   -> FE:       RESULT|<msgId>|R3|<result>
  *
  *   RM <-> Replica:
- *     Replica -> RM (startup): REGISTER|<replicaIdInt>|<city>|<listenPort>   (ACK'd)
- *     RM -> Replica (probe):   PING|<replicaIdInt>        -> reply "PONG"
- *     RM -> Replica (kill):    CRASH|<replicaIdInt>       -> process exits
- *
- * Sequencing: buffer out-of-order requests and execute in seqNum order
- * starting from 1. Duplicate-suppress by seqNum so retransmissions are ACK'd
- * but not re-executed.
+ *     Replica -> RM (startup): REGISTER|<replicaIdInt>|<city>|<listenPort>
+ *     RM -> Replica (probe):   PING|<replicaIdInt>
+ *     RM -> Replica (kill):    CRASH|<replicaIdInt>
  */
 public class Replica3Server {
 
     private static final String REPLICA_ID = "R3";
     private static final int REPLICA_ID_INT = 3;
-    private static final int REPLICA_PORT = Config.REPLICA_3_PORT; // 6003
+    private static final int LISTEN_PORT = Config.REPLICA_3_PORT;
 
-    // Internal UDP ports for the three office servers inside this replica.
-    // Distinct from replica 4's 7401/7402/7403.
-    private static final int MTL_UDP = 7101;
-    private static final int WPG_UDP = 7102;
-    private static final int BNF_UDP = 7103;
+    private static final int MTL_UDP_PORT = 7101;
+    private static final int WPG_UDP_PORT = 7102;
+    private static final int BNF_UDP_PORT = 7103;
 
-    private final OfficeServer mtl;
-    private final OfficeServer wpg;
-    private final OfficeServer bnf;
-
-    private int nextExpectedSeq = 1;
-    private final Map<Integer, RequestEnvelope> buffer = new TreeMap<>();
-    private final Map<Integer, String> executedResults = new ConcurrentHashMap<>();
+    private final Map<String, OfficeServer> offices = new ConcurrentHashMap<>();
+    private final SequencedExecutor sequencedExecutor = new SequencedExecutor();
 
     public Replica3Server() {
-        this.mtl = new OfficeServer(OfficeServer.Office.MTL, MTL_UDP);
-        this.wpg = new OfficeServer(OfficeServer.Office.WPG, WPG_UDP);
-        this.bnf = new OfficeServer(OfficeServer.Office.BNF, BNF_UDP);
+        offices.put("MTL", new OfficeServer(OfficeServer.Office.MTL, MTL_UDP_PORT));
+        offices.put("WPG", new OfficeServer(OfficeServer.Office.WPG, WPG_UDP_PORT));
+        offices.put("BNF", new OfficeServer(OfficeServer.Office.BNF, BNF_UDP_PORT));
     }
 
     public static void main(String[] args) throws Exception {
@@ -61,179 +51,149 @@ public class Replica3Server {
 
     public void start() throws Exception {
         seedInitialData();
-        mtl.startUdpListener();
-        wpg.startUdpListener();
-        bnf.startUdpListener();
+        startOfficeUdpListeners();
 
-        try (DatagramSocket socket = new DatagramSocket(REPLICA_PORT)) {
-            System.out.println("[" + REPLICA_ID + "] listening on port " + REPLICA_PORT);
-
-            // Register with every RM now that we're bound and ready.
+        try (DatagramSocket socket = new DatagramSocket(LISTEN_PORT)) {
+            System.out.println("[" + REPLICA_ID + "] listening on port " + LISTEN_PORT);
             registerWithReplicaManagers();
-
-            byte[] buf = new byte[Config.BUFFER_SIZE];
-            while (true) {
-                DatagramPacket req = new DatagramPacket(buf, buf.length);
-                socket.receive(req);
-                String msg = new String(req.getData(), 0, req.getLength(), StandardCharsets.UTF_8).trim();
-                handleIncoming(msg, socket, req);
-            }
+            listenForever(socket);
         }
     }
 
-    // ============================================================
-    // Incoming dispatch (Sequencer REQ / RM PING / RM CRASH)
-    // ============================================================
+    private void listenForever(DatagramSocket socket) throws Exception {
+        byte[] buffer = new byte[Config.BUFFER_SIZE];
 
-    private void handleIncoming(String msg, DatagramSocket socket, DatagramPacket req) throws Exception {
-        if (msg.startsWith(Config.MSG_REQ + "|")) {
-            handleSequencerRequest(msg, socket, req);
-            return;
-        }
-        if (msg.startsWith("PING|")) {
-            handlePing(socket, req);
-            return;
-        }
-        if (msg.startsWith("CRASH|")) {
-            handleCrash(msg);
-            return;
+        while (true) {
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+            socket.receive(packet);
+
+            String message = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8).trim();
+            handleMessage(message, socket, packet);
         }
     }
 
-    private void handleSequencerRequest(String msg, DatagramSocket socket, DatagramPacket req) throws Exception {
-        String[] parts = msg.split("\\|");
-        if (parts.length < 6) return;
-
-        String msgId = parts[1];
-        int seqNum = Integer.parseInt(parts[2]);
-
-        // ACK back to the sequencer on the same socket it sent from
-        sendAckToSequencer(socket, req, msgId);
-
-        // Duplicate suppression — already executed this seq, just re-ACK and ignore
-        if (executedResults.containsKey(seqNum)) {
+    private void handleMessage(String message, DatagramSocket socket, DatagramPacket packet) throws Exception {
+        if (message.startsWith(Config.MSG_REQ + "|")) {
+            acceptSequencerRequest(message, socket, packet);
             return;
         }
 
-        RequestEnvelope env = RequestEnvelope.from(parts);
-        buffer.put(seqNum, env);
+        if (message.startsWith("PING|")) {
+            replyPong(socket, packet);
+            return;
+        }
 
-        processBufferedRequests(socket);
+        if (message.startsWith("CRASH|")) {
+            terminateReplica(message);
+        }
     }
 
-    private void handlePing(DatagramSocket socket, DatagramPacket req) throws IOException {
-        // RM checks resp.startsWith("PONG") — plain "PONG" is enough.
-        byte[] out = "PONG".getBytes(StandardCharsets.UTF_8);
-        socket.send(new DatagramPacket(out, out.length, req.getAddress(), req.getPort()));
+    private void acceptSequencerRequest(String rawMessage, DatagramSocket socket, DatagramPacket packet) throws Exception {
+        RequestEnvelope envelope = RequestEnvelope.parse(rawMessage);
+        acknowledgeSequencer(socket, packet, envelope.msgId);
+
+        for (ExecutionRecord record : sequencedExecutor.accept(envelope)) {
+            sendResultToFrontEnd(socket, record.envelope, record.result);
+        }
     }
 
-    private void handleCrash(String msg) {
-        System.out.println("[" + REPLICA_ID + "] received " + msg + " from RM — shutting down");
-        mtl.shutdown();
-        wpg.shutdown();
-        bnf.shutdown();
+    private void acknowledgeSequencer(DatagramSocket socket, DatagramPacket packet, String msgId) throws IOException {
+        byte[] payload = (Config.MSG_ACK + "|" + msgId).getBytes(StandardCharsets.UTF_8);
+        socket.send(new DatagramPacket(payload, payload.length, packet.getAddress(), packet.getPort()));
+    }
+
+    private void replyPong(DatagramSocket socket, DatagramPacket packet) throws IOException {
+        byte[] payload = "PONG".getBytes(StandardCharsets.UTF_8);
+        socket.send(new DatagramPacket(payload, payload.length, packet.getAddress(), packet.getPort()));
+    }
+
+    private void terminateReplica(String message) {
+        System.out.println("[" + REPLICA_ID + "] received " + message + " from RM — shutting down");
+        for (OfficeServer office : offices.values()) {
+            office.shutdown();
+        }
         System.exit(0);
     }
 
-    private void sendAckToSequencer(DatagramSocket socket, DatagramPacket req, String msgId) throws IOException {
-        String ack = Config.MSG_ACK + "|" + msgId;
-        byte[] data = ack.getBytes(StandardCharsets.UTF_8);
-        socket.send(new DatagramPacket(data, data.length, req.getAddress(), req.getPort()));
+    private void sendResultToFrontEnd(DatagramSocket socket, RequestEnvelope envelope, String result) throws IOException {
+        String response = Config.MSG_RESULT + "|" + envelope.msgId + "|" + REPLICA_ID + "|" + result;
+        byte[] payload = response.getBytes(StandardCharsets.UTF_8);
+        DatagramPacket packet = new DatagramPacket(
+                payload,
+                payload.length,
+                InetAddress.getByName(envelope.feHost),
+                envelope.fePort
+        );
+        socket.send(packet);
     }
 
-    private void processBufferedRequests(DatagramSocket socket) throws IOException {
-        while (buffer.containsKey(nextExpectedSeq)) {
-            RequestEnvelope env = buffer.remove(nextExpectedSeq);
-
-            String result;
-            try {
-                result = dispatch(env);
-            } catch (Exception e) {
-                result = "ERROR: " + e.getMessage();
-            }
-            executedResults.put(nextExpectedSeq, result);
-
-            sendResultToFE(socket, env, result);
-            nextExpectedSeq++;
+    private String execute(RequestEnvelope envelope) {
+        try {
+            OfficeServer target = resolveOffice(envelope.targetOffice());
+            return invoke(target, envelope);
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage();
         }
     }
 
-    private void sendResultToFE(DatagramSocket socket, RequestEnvelope env, String result) throws IOException {
-        String response = Config.MSG_RESULT + "|" + env.msgId + "|" + REPLICA_ID + "|" + result;
-        byte[] data = response.getBytes(StandardCharsets.UTF_8);
-        DatagramPacket resp = new DatagramPacket(
-                data, data.length,
-                InetAddress.getByName(env.feHost),
-                env.fePort);
-        socket.send(resp);
-    }
-
-    private String dispatch(RequestEnvelope env) {
-        OfficeServer target = chooseOfficeServer(env);
-        return invokeMethod(target, env);
-    }
-
-    private OfficeServer chooseOfficeServer(RequestEnvelope env) {
-        switch (env.getTargetOffice()) {
-            case "MTL": return mtl;
-            case "WPG": return wpg;
-            case "BNF": return bnf;
-            default:
-                throw new IllegalArgumentException("Unknown office " + env.getTargetOffice());
+    private OfficeServer resolveOffice(String officeCode) {
+        OfficeServer office = offices.get(officeCode);
+        if (office == null) {
+            throw new IllegalArgumentException("Unknown office " + officeCode);
         }
+        return office;
     }
 
-    private String invokeMethod(OfficeServer target, RequestEnvelope env) {
-        switch (env.method) {
+    private String invoke(OfficeServer target, RequestEnvelope envelope) {
+        String[] args = envelope.args;
+
+        switch (envelope.method) {
             case "addVehicle":
                 return target.addVehicle(
-                        env.args[0],
-                        Integer.parseInt(env.args[1]),
-                        env.args[2],
-                        env.args[3],
-                        Integer.parseInt(env.args[4]));
+                        args[0],
+                        Integer.parseInt(args[1]),
+                        args[2],
+                        args[3],
+                        Integer.parseInt(args[4])
+                );
             case "removeVehicle":
-                return target.removeVehicle(env.args[0], env.args[1]);
+                return target.removeVehicle(args[0], args[1]);
             case "listAvailableVehicle":
-                return target.listAvailableVehicle(env.args[0]);
+                return target.listAvailableVehicle(args[0]);
             case "reserveVehicle":
-                return target.reserveVehicle(env.args[0], env.args[1], env.args[2], env.args[3]);
+                return target.reserveVehicle(args[0], args[1], args[2], args[3]);
             case "cancelReservation":
-                return target.cancelReservation(env.args[0], env.args[1]);
+                return target.cancelReservation(args[0], args[1]);
             case "updateReservation":
-                return target.updateReservation(env.args[0], env.args[1], env.args[2], env.args[3]);
+                return target.updateReservation(args[0], args[1], args[2], args[3]);
             case "findVehicle":
-                return target.findVehicle(env.args[0], env.args[1]);
+                return target.findVehicle(args[0], args[1]);
             case "displayCurrentBudget":
-                return target.displayCurrentBudget(env.args[0]);
+                return target.displayCurrentBudget(args[0]);
             case "displayReservations":
-                return target.displayReservations(env.args[0]);
+                return target.displayReservations(args[0]);
             case "displayNotifications":
-                return target.displayNotifications(env.args[0]);
+                return target.displayNotifications(args[0]);
             default:
-                return "ERROR: unknown method " + env.method;
+                return "ERROR: unknown method " + envelope.method;
         }
     }
 
     private void seedInitialData() {
-        mtl.seed(InitialData.getMTLData());
-        wpg.seed(InitialData.getWPGData());
-        bnf.seed(InitialData.getBNFData());
+        resolveOffice("MTL").seed(InitialData.getMTLData());
+        resolveOffice("WPG").seed(InitialData.getWPGData());
+        resolveOffice("BNF").seed(InitialData.getBNFData());
         System.out.println("[" + REPLICA_ID + "] seeded initial data");
     }
 
-    // ============================================================
-    // Replica Manager registration
-    // ============================================================
+    private void startOfficeUdpListeners() {
+        for (OfficeServer office : offices.values()) {
+            office.startUdpListener();
+        }
+    }
 
-    /**
-     * Announce this replica to every RM. Each RM needs the replicaId, a city
-     * tag, and the replica's listen port so it can restart it on failure.
-     * Because this replica hosts all three offices, we use "ALL" as the city
-     * tag — the RM launch logic only uses the string verbatim in launch args.
-     */
     private void registerWithReplicaManagers() {
-        String message = "REGISTER|" + REPLICA_ID_INT + "|ALL|" + REPLICA_PORT;
+        String message = "REGISTER|" + REPLICA_ID_INT + "|ALL|" + LISTEN_PORT;
         int[] rmPorts = {
                 Config.RM_1_PORT,
                 Config.RM_2_PORT,
@@ -241,30 +201,30 @@ public class Replica3Server {
                 Config.RM_4_PORT
         };
 
-        for (int port : rmPorts) {
-            boolean acked = sendReliableToRM("localhost", port, message);
-            System.out.println("[" + REPLICA_ID + "] REGISTER -> RM@" + port
-                    + " " + (acked ? "ACKed" : "no ACK after retries"));
+        for (int rmPort : rmPorts) {
+            boolean acked = sendReliableToRM("localhost", rmPort, message);
+            System.out.println("[" + REPLICA_ID + "] REGISTER -> RM@" + rmPort + " "
+                    + (acked ? "ACKed" : "no ACK after retries"));
         }
     }
 
-    /**
-     * Reliable-UDP send that mirrors the RM's own sender: 500 ms timeout,
-     * 5 retries, considers any reply starting with "ACK" a success.
-     */
     private boolean sendReliableToRM(String host, int port, String message) {
-        byte[] data = message.getBytes(StandardCharsets.UTF_8);
-        try (DatagramSocket sock = new DatagramSocket()) {
-            sock.setSoTimeout(Config.ACK_TIMEOUT_MS);
-            InetAddress addr = InetAddress.getByName(host);
-            for (int attempt = 1; attempt <= Config.MAX_RETRIES; attempt++) {
-                sock.send(new DatagramPacket(data, data.length, addr, port));
+        byte[] payload = message.getBytes(StandardCharsets.UTF_8);
+
+        try (DatagramSocket socket = new DatagramSocket()) {
+            socket.setSoTimeout(Config.ACK_TIMEOUT_MS);
+            InetAddress address = InetAddress.getByName(host);
+
+            for (int attempt = 0; attempt < Config.MAX_RETRIES; attempt++) {
+                socket.send(new DatagramPacket(payload, payload.length, address, port));
                 try {
-                    byte[] buf = new byte[128];
-                    DatagramPacket ack = new DatagramPacket(buf, buf.length);
-                    sock.receive(ack);
-                    String reply = new String(ack.getData(), 0, ack.getLength(), StandardCharsets.UTF_8).trim();
-                    if (reply.startsWith("ACK")) return true;
+                    byte[] buffer = new byte[128];
+                    DatagramPacket ackPacket = new DatagramPacket(buffer, buffer.length);
+                    socket.receive(ackPacket);
+                    String reply = new String(ackPacket.getData(), 0, ackPacket.getLength(), StandardCharsets.UTF_8).trim();
+                    if (reply.startsWith("ACK")) {
+                        return true;
+                    }
                 } catch (SocketTimeoutException ignored) {
                     // retry
                 }
@@ -272,6 +232,43 @@ public class Replica3Server {
         } catch (IOException e) {
             System.err.println("[" + REPLICA_ID + "] sendReliableToRM failed: " + e.getMessage());
         }
+
         return false;
+    }
+
+    private final class SequencedExecutor {
+        private int nextExpectedSeq = 1;
+        private final Map<Integer, RequestEnvelope> pending = new TreeMap<>();
+        private final Map<Integer, String> completed = new ConcurrentHashMap<>();
+
+        private Iterable<ExecutionRecord> accept(RequestEnvelope envelope) {
+            java.util.List<ExecutionRecord> ready = new java.util.ArrayList<>();
+
+            if (completed.containsKey(envelope.seqNum)) {
+                return ready;
+            }
+
+            pending.put(envelope.seqNum, envelope);
+
+            while (pending.containsKey(nextExpectedSeq)) {
+                RequestEnvelope next = pending.remove(nextExpectedSeq);
+                String result = execute(next);
+                completed.put(nextExpectedSeq, result);
+                ready.add(new ExecutionRecord(next, result));
+                nextExpectedSeq++;
+            }
+
+            return ready;
+        }
+    }
+
+    private static final class ExecutionRecord {
+        private final RequestEnvelope envelope;
+        private final String result;
+
+        private ExecutionRecord(RequestEnvelope envelope, String result) {
+            this.envelope = envelope;
+            this.result = result;
+        }
     }
 }

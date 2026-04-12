@@ -4,7 +4,6 @@ import com.dvrms.common.Config;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
@@ -35,6 +34,8 @@ public class ReliableUDPSender {
      * Sends a sequenced request to this replica with reliable delivery.
      * Retransmits up to MAX_RETRIES times if no ACK is received.
      *
+     * @param msgId    the FE-generated request ID, reused end-to-end so the
+     *                 replica's RESULT can be matched back to the FE's responseMap
      * @param seqNum   the sequence number assigned to the request
      * @param feHost   the FE's return address (host)
      * @param fePort   the FE's return address (port)
@@ -42,8 +43,7 @@ public class ReliableUDPSender {
      * @param args     the method arguments
      * @return true if the replica ACKed, false if unreachable
      */
-    public boolean sendReliably(int seqNum, String feHost, int fePort, String method, String args) {
-        String msgId = UUID.randomUUID().toString();
+    public boolean sendReliably(String msgId, int seqNum, String feHost, int fePort, String method, String args) {
 
         // Build: REQ|<msgID>|<seqNum>|<feHost>|<fePort>|<method>|<args>
         String message = String.join(Config.DELIMITER,

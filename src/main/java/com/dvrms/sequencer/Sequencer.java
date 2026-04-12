@@ -169,6 +169,7 @@ public class Sequencer {
         retransmissionLog.put(seqNum, message);
 
         // Reliably multicast to all active replicas in parallel
+        final String finalMsgId = feMsgId;
         final String finalArgs = args;
         final String finalFeHost = feHost;
         final int finalFePort = fePort;
@@ -180,7 +181,7 @@ public class Sequencer {
             if (sender.getTarget().isActive()) {
                 multicastPool.submit(() -> {
                     try {
-                        boolean acked = sender.sendReliably(seqNum, finalFeHost, finalFePort, finalMethod, finalArgs);
+                        boolean acked = sender.sendReliably(finalMsgId, seqNum, finalFeHost, finalFePort, finalMethod, finalArgs);
                         if (acked) {
                             LOG.info("[Sequencer] Delivery confirmed to " + sender.getTarget().getReplicaId() + " for seqNum=" + seqNum);
                         }

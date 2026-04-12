@@ -1,3 +1,5 @@
+package com.dvrms.replica5;
+
 public class Vehicle {
 
     private final String vehicleID;

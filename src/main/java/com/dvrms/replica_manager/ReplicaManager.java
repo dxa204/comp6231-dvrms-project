@@ -175,12 +175,12 @@ public class ReplicaManager {
  
                         case "FAULT":
                             // FAULT|<replicaID>|<seqNum>   (from FE)
-                            handleFault(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+                            handleFault(parseReplicaId(parts[1]), Integer.parseInt(parts[2]));
                             break;
- 
+
                         case "CRASH":
                             // CRASH|<replicaID>   (from FE or Sequencer)
-                            handleCrashSuspicion(Integer.parseInt(parts[1]));
+                            handleCrashSuspicion(parseReplicaId(parts[1]));
                             break;
  
                         case "CHECK":
@@ -474,36 +474,30 @@ public class ReplicaManager {
             // Step 2: Give the port time to be released
             Thread.sleep(1500);
  
-            // Step 3: Spawn fresh VehicleServer processes — one per city.
-            // If this host runs all 3 city servers for this replicaId, restart each.
-            String orbHost = System.getProperty("orb.host", "localhost");
+            // Step 3: Restart the actual replica implementation for this replicaId.
             List<String> cities = new ArrayList<>();
             for (String key : replicasByKey.keySet()) {
-                if (key.startsWith(replicaId + "_"))
+                if (key.startsWith(replicaId + "_")) {
                     cities.add(key.substring(key.indexOf('_') + 1));
+                }
             }
             if (cities.isEmpty()) cities.add(info.city); // fallback: single-city mode
- 
-            Process lastProcess = null;
-            for (String city : cities) {
-                String rKey = replicaId + "_" + city;
-                ReplicaInfo cityInfo = replicasByKey.getOrDefault(rKey, info);
 
-                List<String> cmd = new ArrayList<>();
-                cmd.add("java");
-                String classpath = System.getProperty("java.class.path");
-                if (classpath != null && !classpath.isEmpty()) {
-                    cmd.add("-cp");
-                    cmd.add(classpath);
+            Process lastProcess = null;
+            if (replicaId == 2) {
+                for (String city : cities) {
+                    String rKey = replicaId + "_" + city;
+                    ReplicaInfo cityInfo = replicasByKey.getOrDefault(rKey, info);
+                    lastProcess = new ProcessBuilder(buildJavaCommand(
+                            "com.dvrms.replica2.VehicleServer",
+                            cityInfo.launchArgs)).inheritIO().start();
+                    System.out.println("[RM " + rmId + "] Restarted " + city
+                            + " server for replica " + replicaId + " (pid=" + getProcessId(lastProcess) + ")");
                 }
-                if (!orbHost.equals("localhost"))
-                    cmd.add("-Dorb.host=" + orbHost);
-                cmd.add("com.dvrms.replica2.VehicleServer");
-                cmd.addAll(Arrays.asList(cityInfo.launchArgs));
- 
-                lastProcess = new ProcessBuilder(cmd).inheritIO().start();
-                System.out.println("[RM " + rmId + "] Restarted " + city
-                        + " server for replica " + replicaId + " (pid=" + getProcessId(lastProcess) + ")");
+            } else {
+                lastProcess = new ProcessBuilder(buildJavaCommand(replicaMainClass(replicaId))).inheritIO().start();
+                System.out.println("[RM " + rmId + "] Restarted replica " + replicaId
+                        + " (pid=" + getProcessId(lastProcess) + ")");
             }
  
             Thread.sleep(3000); // wait for all new processes to bind their ports
@@ -577,6 +571,42 @@ public class ReplicaManager {
         }
 
         return -1L;
+    }
+
+    private List<String> buildJavaCommand(String mainClass, String... args) {
+        List<String> cmd = new ArrayList<>();
+        cmd.add(System.getProperty("java.home") + "/bin/java");
+        String classpath = System.getProperty("java.class.path");
+        if (classpath != null && !classpath.isEmpty()) {
+            cmd.add("-cp");
+            cmd.add(classpath);
+        }
+        cmd.add(mainClass);
+        cmd.addAll(Arrays.asList(args));
+        return cmd;
+    }
+
+    private String replicaMainClass(int replicaId) {
+        switch (replicaId) {
+            case 1:
+                return "com.dvrms.replica1.Replica1Server";
+            case 2:
+                return "com.dvrms.replica2.VehicleServer";
+            case 3:
+                return "com.dvrms.replica3.Replica3Server";
+            case 4:
+                return "com.dvrms.replica4.Replica4Server";
+            default:
+                throw new IllegalArgumentException("Unknown replica " + replicaId);
+        }
+    }
+
+    private static int parseReplicaId(String value) {
+        String normalized = value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+        if (normalized.startsWith("R")) {
+            normalized = normalized.substring(1);
+        }
+        return Integer.parseInt(normalized);
     }
  
     /** Send and wait for ACK. 500 ms timeout, 5 retries. */

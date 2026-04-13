@@ -1,4 +1,8 @@
 package com.dvrms.replica2;
+
+import com.dvrms.common.InitialData;
+import com.dvrms.common.ReplicaResponseNormalizer;
+import com.dvrms.common.VehicleRecord;
 import org.omg.CORBA.*;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
@@ -55,7 +59,34 @@ public class VehicleServer extends DVRMSPOA {
         this.listenPort = listenPort;
         this.rmHost = rmHost;
         this.rmPort = rmPort;
+        seedInitialData();
         System.out.println("[Replica " + replicaId + "] " + city + " ready on port " + listenPort);
+    }
+
+    private void seedInitialData() {
+        Map<String, VehicleRecord> initialRecords;
+        switch (city.toUpperCase(Locale.ROOT)) {
+            case "MTL":
+                initialRecords = InitialData.getMTLData();
+                break;
+            case "WPG":
+                initialRecords = InitialData.getWPGData();
+                break;
+            case "BNF":
+                initialRecords = InitialData.getBNFData();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown city for initial data: " + city);
+        }
+
+        for (VehicleRecord record : initialRecords.values()) {
+            vehicles.put(record.vehicleID, new Vehicle(
+                    record.vehicleID,
+                    record.vehicleType,
+                    String.valueOf(record.vehicleNumber),
+                    record.reservationPrice
+            ));
+        }
     }
 
     /**
@@ -229,12 +260,22 @@ public class VehicleServer extends DVRMSPOA {
             result = "Execution error: " + e.getMessage();
         }
  
-        // Send RESULT|<msgID>|<replicaID>|<resultString> to FE
+        // Send RESULT|<msgID>|<replicaID>|<resultString> to FE.
+        // FE does not implement ACKs for result packets, so use plain UDP here.
         try {
-            sendUDP(feHost, fePort, "RESULT|" + msgID + "|" + replicaId + "|" + result);
+            sendResultToFrontEnd(feHost, fePort, msgID, ReplicaResponseNormalizer.normalize(method, result));
             Logger.log(city, "[R" + replicaId + "] " + method + " msgID=" + msgID + " → " + result, "replica");
         } catch (Exception e) {
             System.err.println("[Replica " + replicaId + "] Failed to send RESULT to FE: " + e.getMessage());
+        }
+    }
+
+    private void sendResultToFrontEnd(String host, int port, String msgId, String result) throws Exception {
+        String message = "RESULT|" + msgId + "|R" + replicaId + "|" + result;
+        byte[] data = message.getBytes();
+        InetAddress addr = InetAddress.getByName(host);
+        try (DatagramSocket socket = new DatagramSocket()) {
+            socket.send(new DatagramPacket(data, data.length, addr, port));
         }
     }
  

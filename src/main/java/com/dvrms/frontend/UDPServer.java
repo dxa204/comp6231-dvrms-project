@@ -55,7 +55,8 @@ public class UDPServer extends Thread {
 
         try {
             // RESULT|<requestID>|<replicaID>|<result>
-            String[] parts = message.split("\\" + Config.DELIMITER);
+            // Preserve a trailing empty result payload, e.g. RESULT|req|R1|
+            String[] parts = message.split("\\" + Config.DELIMITER, -1);
 
             if (parts.length < 4) {
                 System.err.println("[FE-UDP] Malformed RESULT: " + message);

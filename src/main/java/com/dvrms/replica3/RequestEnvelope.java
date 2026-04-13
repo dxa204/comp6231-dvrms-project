@@ -48,7 +48,8 @@ public final class RequestEnvelope {
     public boolean isManagerOperation() {
         return "addVehicle".equals(method)
                 || "removeVehicle".equals(method)
-                || "listAvailableVehicle".equals(method);
+                || "listAvailableVehicle".equals(method)
+                || "listAvailableVehicles".equals(method);
     }
 
     public boolean isCustomerOperation() {

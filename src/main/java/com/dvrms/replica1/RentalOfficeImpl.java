@@ -56,10 +56,11 @@ public class RentalOfficeImpl extends RentalOfficePOA {
         this.foreignReservationsByOffice = new HashMap<>();
         this.officePorts = new HashMap<>();
 
-        // Define UDP ports for each office
-        this.officePorts.put("MTL", 5000);
-        this.officePorts.put("WPG", 5001);
-        this.officePorts.put("BNF", 5002);
+        // Preserve the original replica1 defaults unless the stack adapter
+        // overrides them to avoid sequencer/front-end port collisions.
+        this.officePorts.put("MTL", Integer.getInteger("dvrms.replica1.port.MTL", 5000));
+        this.officePorts.put("WPG", Integer.getInteger("dvrms.replica1.port.WPG", 5001));
+        this.officePorts.put("BNF", Integer.getInteger("dvrms.replica1.port.BNF", 5002));
 
         // Create logs directory if it doesn't exist
         Path logDir = Paths.get("logs", "servers");

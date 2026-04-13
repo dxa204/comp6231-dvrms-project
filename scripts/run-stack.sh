@@ -50,7 +50,19 @@ compile_sources() {
 
   while IFS= read -r file; do
     sources+=("${file}")
+  done < <(find "${ROOT_DIR}/src/main/java/com/dvrms/replica1" -name "*.java" | sort)
+
+  while IFS= read -r file; do
+    sources+=("${file}")
   done < <(find "${ROOT_DIR}/src/main/java/com/dvrms/replica2" -name "*.java" | sort)
+
+  while IFS= read -r file; do
+    sources+=("${file}")
+  done < <(find "${ROOT_DIR}/src/main/java/com/dvrms/replica3" -name "*.java" | sort)
+
+  while IFS= read -r file; do
+    sources+=("${file}")
+  done < <(find "${ROOT_DIR}/src/main/java/com/dvrms/replica4" -name "*.java" | sort)
 
   "${JAVAC_CMD}" -d "${OUT_DIR}" "${sources[@]}"
 }
@@ -61,7 +73,7 @@ start_process() {
   local log_file="${LOG_DIR}/${name}.log"
   (
     cd "${ROOT_DIR}"
-    "$@"
+    exec "$@"
   ) >"${log_file}" 2>&1 &
   local pid=$!
   echo "${pid} ${name}" >> "${PID_FILE}"
@@ -80,13 +92,15 @@ start_process "rm2" "${JAVA_CMD}" -cp "${OUT_DIR}" com.dvrms.replica_manager.Rep
 start_process "rm3" "${JAVA_CMD}" -cp "${OUT_DIR}" com.dvrms.replica_manager.ReplicaManager 3 1 localhost 7001 2 localhost 7002 4 localhost 7004
 start_process "rm4" "${JAVA_CMD}" -cp "${OUT_DIR}" com.dvrms.replica_manager.ReplicaManager 4 1 localhost 7001 2 localhost 7002 3 localhost 7003
 
-for replica_id in 1 2 3 4; do
-  rm_port=$((7000 + replica_id))
-  for city in MTL WPG BNF; do
-    start_process "replica${replica_id}_${city}" \
-      "${JAVA_CMD}" -cp "${OUT_DIR}" com.dvrms.replica2.VehicleServer "${city}" "${replica_id}" localhost "${rm_port}"
-  done
+start_process "replica1" "${JAVA_CMD}" -cp "${OUT_DIR}" com.dvrms.replica1.Replica1Server
+
+for city in MTL WPG BNF; do
+  start_process "replica2_${city}" \
+    "${JAVA_CMD}" -cp "${OUT_DIR}" com.dvrms.replica2.VehicleServer "${city}" "2" localhost "7002"
 done
+
+start_process "replica3" "${JAVA_CMD}" -cp "${OUT_DIR}" com.dvrms.replica3.Replica3Server
+start_process "replica4" "${JAVA_CMD}" -cp "${OUT_DIR}" com.dvrms.replica4.Replica4Server
 
 sleep 3
 start_process "frontend" "${JAVA_CMD}" -Dorb.host=localhost -Dorb.port=1050 -cp "${OUT_DIR}" com.dvrms.frontend.CORBAServer
@@ -107,6 +121,9 @@ Frontend client examples:
   ${JAVA_CMD} -cp "${OUT_DIR}" com.dvrms.frontend.FrontEndClient addVehicle MTLM1111 AAA111 Sedan MTL1001 120
   ${JAVA_CMD} -cp "${OUT_DIR}" com.dvrms.frontend.FrontEndClient reserveVehicle MTLU1111 MTL1001 2026-04-20 2026-04-22
 
+Interactive UI:
+  ${JAVA_CMD} -cp "${OUT_DIR}" com.dvrms.frontend.FrontEndCLI
+
 Stop the stack:
-  while read -r pid _; do kill "\$pid"; done < "${PID_FILE}"
+  ./scripts/stop-stack.sh
 EOF

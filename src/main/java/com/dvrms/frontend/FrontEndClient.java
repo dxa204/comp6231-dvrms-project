@@ -11,7 +11,7 @@ import java.util.Properties;
 
 public class FrontEndClient {
 
-    private static FrontEnd connect(String host, String port) throws Exception {
+    static FrontEnd connect(String host, String port) throws Exception {
         Properties props = new Properties();
         props.put("org.omg.CORBA.ORBInitialHost", host);
         props.put("org.omg.CORBA.ORBInitialPort", port);

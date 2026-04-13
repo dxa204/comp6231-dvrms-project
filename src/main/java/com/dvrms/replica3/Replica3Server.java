@@ -2,6 +2,7 @@ package com.dvrms.replica3;
 
 import com.dvrms.common.Config;
 import com.dvrms.common.InitialData;
+import com.dvrms.common.ReplicaResponseNormalizer;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -9,6 +10,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,6 +38,8 @@ public class Replica3Server {
     private static final int MTL_UDP_PORT = 7101;
     private static final int WPG_UDP_PORT = 7102;
     private static final int BNF_UDP_PORT = 7103;
+    private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final DateTimeFormatter DMY_DATE = DateTimeFormatter.ofPattern("ddMMyyyy");
 
     private final Map<String, OfficeServer> offices = new ConcurrentHashMap<>();
     private final SequencedExecutor sequencedExecutor = new SequencedExecutor();
@@ -116,7 +121,8 @@ public class Replica3Server {
     }
 
     private void sendResultToFrontEnd(DatagramSocket socket, RequestEnvelope envelope, String result) throws IOException {
-        String response = Config.MSG_RESULT + "|" + envelope.msgId + "|" + REPLICA_ID + "|" + result;
+        String response = Config.MSG_RESULT + "|" + envelope.msgId + "|" + REPLICA_ID + "|"
+                + ReplicaResponseNormalizer.normalize(envelope.method, result);
         byte[] payload = response.getBytes(StandardCharsets.UTF_8);
         DatagramPacket packet = new DatagramPacket(
                 payload,
@@ -159,13 +165,14 @@ public class Replica3Server {
             case "removeVehicle":
                 return target.removeVehicle(args[0], args[1]);
             case "listAvailableVehicle":
+            case "listAvailableVehicles":
                 return target.listAvailableVehicle(args[0]);
             case "reserveVehicle":
-                return target.reserveVehicle(args[0], args[1], args[2], args[3]);
+                return target.reserveVehicle(args[0], args[1], toDdMmYyyy(args[2]), toDdMmYyyy(args[3]));
             case "cancelReservation":
                 return target.cancelReservation(args[0], args[1]);
             case "updateReservation":
-                return target.updateReservation(args[0], args[1], args[2], args[3]);
+                return target.updateReservation(args[0], args[1], toDdMmYyyy(args[2]), toDdMmYyyy(args[3]));
             case "findVehicle":
                 return target.findVehicle(args[0], args[1]);
             case "displayCurrentBudget":
@@ -184,6 +191,13 @@ public class Replica3Server {
         resolveOffice("WPG").seed(InitialData.getWPGData());
         resolveOffice("BNF").seed(InitialData.getBNFData());
         System.out.println("[" + REPLICA_ID + "] seeded initial data");
+    }
+
+    private String toDdMmYyyy(String value) {
+        if (value != null && value.matches("\\d{8}")) {
+            return value;
+        }
+        return LocalDate.parse(value, ISO_DATE).format(DMY_DATE);
     }
 
     private void startOfficeUdpListeners() {

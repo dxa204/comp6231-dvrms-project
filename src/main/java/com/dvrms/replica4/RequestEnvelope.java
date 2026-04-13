@@ -34,6 +34,7 @@ public class RequestEnvelope {
             case "addVehicle":
             case "removeVehicle":
             case "listAvailableVehicle":
+            case "listAvailableVehicles":
                 return args[0].substring(0, 3); // managerID
             case "reserveVehicle":
             case "cancelReservation":

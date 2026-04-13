@@ -38,9 +38,93 @@ dvrms-project/
 ### Prerequisites
 - Java 8+ (with CORBA support, or use GlassFish ORB for Java 11+)
 
+For the full DVRMS stack in this repository, use a Java 8 runtime with CORBA support. If you have multiple JDKs installed, point `JAVA8_HOME` to your Java 8 installation before running the stack scripts.
+
 ### Compile
 ```bash
 javac -d out src/main/java/com/dvrms/common/*.java src/main/java/com/dvrms/sequencer/*.java src/test/java/com/dvrms/sequencer/*.java
+```
+
+### Run the Full Stack
+Use the helper script to compile the stack into `out/stack` and start:
+- `orbd`
+- Sequencer
+- Replica Managers `RM1` to `RM4`
+- replicas `R1` to `R4`
+- Front End CORBA server
+
+```bash
+JAVA8_HOME="/path/to/java8" ./scripts/run-stack.sh
+```
+
+Example:
+```bash
+JAVA8_HOME="/Users/thachpham/Library/Java/JavaVirtualMachines/corretto-1.8.0_482/Contents/Home" ./scripts/run-stack.sh
+```
+
+Logs are written to:
+```bash
+out/stack-logs
+```
+
+The PID file used by the stop script is:
+```bash
+out/stack-logs/pids.txt
+```
+
+### Run the Interactive CLI
+After the stack is running, start the interactive front-end CLI with:
+
+```bash
+java -Dorb.host=localhost -Dorb.port=1050 -cp out/stack com.dvrms.frontend.FrontEndCLI
+```
+
+If you are using a specific Java 8 installation, run:
+
+```bash
+"$JAVA8_HOME/bin/java" -Dorb.host=localhost -Dorb.port=1050 -cp out/stack com.dvrms.frontend.FrontEndCLI
+```
+
+### Stop the Full Stack
+Use:
+
+```bash
+./scripts/stop-stack.sh
+```
+
+The stop script:
+- kills PIDs recorded by `run-stack.sh`
+- scans the known stack ports and kills those processes too
+- checks known DVRMS Java process names
+- escalates to `SIGKILL` if needed
+
+### If Processes Are Still Left Running
+If a process still holds a stack port after `./scripts/stop-stack.sh`, find it and kill it manually.
+
+Check a specific port such as the Front End on `5001`:
+
+```bash
+lsof -nP -i :5001
+```
+
+Get only the PID:
+
+```bash
+lsof -ti :5001
+```
+
+Force-kill it:
+
+```bash
+kill -9 <PID>
+```
+
+You can use the same pattern for other ports, for example:
+
+```bash
+lsof -nP -i :5000
+lsof -nP -i :6001
+lsof -nP -i :7001
 ```
 
 ### Run the Sequencer

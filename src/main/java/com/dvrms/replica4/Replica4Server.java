@@ -2,10 +2,13 @@ package com.dvrms.replica4;
 
 import com.dvrms.common.Config;
 import com.dvrms.common.InitialData;
+import com.dvrms.common.ReplicaResponseNormalizer;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +18,8 @@ public class Replica4Server {
     private static final String REPLICA_ID = "R4";
     private static final int REPLICA_ID_INT = 4;
     private static final int REPLICA_PORT = Config.REPLICA_4_PORT;
+    private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final DateTimeFormatter DMY_DATE = DateTimeFormatter.ofPattern("ddMMyyyy");
 
     private final OfficeServer mtl = new OfficeServer(OfficeServer.Office.MTL, 7401);
     private final OfficeServer wpg = new OfficeServer(OfficeServer.Office.WPG, 7402);
@@ -120,7 +125,8 @@ public class Replica4Server {
             String result = dispatch(env);
             executedResults.put(nextExpectedSeq, result);
 
-            String response = "RESULT|" + env.msgId + "|R4|" + result;
+            String response = "RESULT|" + env.msgId + "|R4|"
+                    + ReplicaResponseNormalizer.normalize(env.method, result);
 
             DatagramPacket resp = new DatagramPacket(
                     response.getBytes(StandardCharsets.UTF_8),
@@ -156,13 +162,14 @@ public class Replica4Server {
             case "removeVehicle":
                 return target.removeVehicle(env.args[0], env.args[1]);
             case "listAvailableVehicle":
+            case "listAvailableVehicles":
                 return target.listAvailableVehicle(env.args[0]);
             case "reserveVehicle":
-                return target.reserveVehicle(env.args[0], env.args[1], env.args[2], env.args[3]);
+                return target.reserveVehicle(env.args[0], env.args[1], toDdMmYyyy(env.args[2]), toDdMmYyyy(env.args[3]));
             case "cancelReservation":
                 return target.cancelReservation(env.args[0], env.args[1]);
             case "updateReservation":
-                return target.updateReservation(env.args[0], env.args[1], env.args[2], env.args[3]);
+                return target.updateReservation(env.args[0], env.args[1], toDdMmYyyy(env.args[2]), toDdMmYyyy(env.args[3]));
             case "findVehicle":
                 return target.findVehicle(env.args[0], env.args[1]);
             case "displayCurrentBudget":
@@ -182,6 +189,13 @@ public class Replica4Server {
         bnf.seed(InitialData.getBNFData());
 
         System.out.println("Replica 4 seeded successfully");
+    }
+
+    private String toDdMmYyyy(String value) {
+        if (value != null && value.matches("\\d{8}")) {
+            return value;
+        }
+        return LocalDate.parse(value, ISO_DATE).format(DMY_DATE);
     }
 
     private void registerWithReplicaManagers() {

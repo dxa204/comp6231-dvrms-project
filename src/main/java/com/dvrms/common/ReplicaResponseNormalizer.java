@@ -1,0 +1,126 @@
+package com.dvrms.common;
+
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public final class ReplicaResponseNormalizer {
+
+    private static final Pattern VEHICLE_ID_PATTERN = Pattern.compile("(MTL|WPG|BNF)\\d{4}");
+
+    private ReplicaResponseNormalizer() {
+    }
+
+    public static String normalize(String method, String rawResult) {
+        String raw = rawResult == null ? "" : rawResult.trim();
+
+        if ("listAvailableVehicle".equals(method) || "listAvailableVehicles".equals(method)) {
+            return normalizeVehicleListing(raw);
+        }
+        if ("findVehicle".equals(method)) {
+            return normalizeVehicleListing(raw);
+        }
+        if ("addVehicle".equals(method)) {
+            return normalizeStatus(raw, "SUCCESS", "added", "updated");
+        }
+        if ("removeVehicle".equals(method)) {
+            return normalizeStatus(raw, "SUCCESS", "removed");
+        }
+        if ("reserveVehicle".equals(method)) {
+            return normalizeReservation(raw);
+        }
+        if ("updateReservation".equals(method)) {
+            return normalizeUpdate(raw);
+        }
+        if ("cancelReservation".equals(method)) {
+            return normalizeCancel(raw);
+        }
+
+        return raw;
+    }
+
+    private static String normalizeVehicleListing(String raw) {
+        Set<String> ids = new TreeSet<>();
+        Matcher matcher = VEHICLE_ID_PATTERN.matcher(raw);
+        while (matcher.find()) {
+            ids.add(matcher.group());
+        }
+        if (ids.isEmpty()) {
+            return "EMPTY";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (String id : ids) {
+            if (builder.length() > 0) {
+                builder.append('\n');
+            }
+            builder.append(id);
+        }
+        return builder.toString();
+    }
+
+    private static String normalizeReservation(String raw) {
+        String lower = raw.toLowerCase();
+        if (lower.contains("waitlist")) {
+            return "WAITLISTED";
+        }
+        if (lower.contains("budget")) {
+            return "INSUFFICIENT_BUDGET";
+        }
+        if (lower.contains("reserved") || lower.contains("success")) {
+            return "SUCCESS";
+        }
+        if (lower.contains("unavailable")
+                || lower.contains("overlap")
+                || lower.contains("conflict")
+                || lower.contains("not available")
+                || lower.contains("not in stock")) {
+            return "UNAVAILABLE";
+        }
+        if (lower.contains("timeout")) {
+            return "TIMEOUT";
+        }
+        return "ERROR";
+    }
+
+    private static String normalizeUpdate(String raw) {
+        String lower = raw.toLowerCase();
+        if (lower.contains("updated") || lower.contains("success")) {
+            return "SUCCESS";
+        }
+        if (lower.contains("waitlist")) {
+            return "WAITLISTED";
+        }
+        if (lower.contains("conflict")
+                || lower.contains("unavailable")
+                || lower.contains("no reservation")) {
+            return "UNAVAILABLE";
+        }
+        if (lower.contains("timeout")) {
+            return "TIMEOUT";
+        }
+        return "ERROR";
+    }
+
+    private static String normalizeCancel(String raw) {
+        String lower = raw.toLowerCase();
+        if (lower.contains("cancelled") || lower.contains("canceled") || lower.contains("success")) {
+            return "SUCCESS";
+        }
+        if (lower.contains("timeout")) {
+            return "TIMEOUT";
+        }
+        return "ERROR";
+    }
+
+    private static String normalizeStatus(String raw, String successValue, String... successTokens) {
+        String lower = raw.toLowerCase();
+        for (String token : successTokens) {
+            if (lower.contains(token)) {
+                return successValue;
+            }
+        }
+        return "ERROR";
+    }
+}

@@ -19,4 +19,7 @@ target/
 Thumbs.db
 
 # Logs
-*.log
+*.logs
+
+#Text files
+*.txt

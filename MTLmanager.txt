@@ -1,4 +1,0 @@
-2026-04-12T21:47:00.045 : MTLM1234 added vehicle Sedan with license plate 1234 and vehicle ID MTL1234 and with a cost of 120.0
-2026-04-12T21:47:00.045 : MTLM1234 added vehicle Sedan with license plate 1234 and vehicle ID MTL1234 and with a cost of 120.0
-2026-04-12T21:47:00.045 : MTLM1234 added vehicle Sedan with license plate 1234 and vehicle ID MTL1234 and with a cost of 120.0
-2026-04-12T21:47:00.045 : MTLM1234 added vehicle Sedan with license plate 1234 and vehicle ID MTL1234 and with a cost of 120.0

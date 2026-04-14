@@ -101,3 +101,14 @@
 2026-04-14T15:35:18.772 [MTL] [main] findVehicle Sedan
 2026-04-14T15:48:06.493 [MTL] [pool-1-thread-1] UDP listening on port 7401
 2026-04-14T15:50:42.412 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T16:51:23.320 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T17:00:21.245 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 18042026-20042026 cost=120
+2026-04-14T17:00:21.245 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-14T17:01:38.184 [MTL] [main] reserveVehicle UNAVAILABLE MTLU1234 MTL3012 18042026-20042026
+2026-04-14T17:02:52.798 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T17:13:45.353 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T17:14:20.007 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 18042026-20042026 cost=120
+2026-04-14T17:14:20.007 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-14T17:22:03.119 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T17:23:23.228 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 18042026-20042026 cost=120
+2026-04-14T17:23:23.228 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880

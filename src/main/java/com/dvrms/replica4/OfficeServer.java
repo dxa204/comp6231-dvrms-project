@@ -463,7 +463,6 @@ public class OfficeServer {
             if (!isAvailableForPeriod(vehicleID, start, end)) {
                 String pKey = pendingKey(customerID, vehicleID, startDDMMYYYY, endDDMMYYYY);
 
-                // 1st time -> “ask user”
                 if (!pendingWaitlistConfirm.containsKey(pKey)) {
                     pendingWaitlistConfirm.put(pKey, System.currentTimeMillis());
                     log("reserveVehicle UNAVAILABLE " + customerID + " " + vehicleID + " " + startDDMMYYYY + "-" + endDDMMYYYY);

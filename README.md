@@ -106,7 +106,7 @@ On Laptop A, you can either let the script detect the IP automatically, or set i
 export DVRMS_LAPTOP_A_IP=172.20.10.4
 export DVRMS_LAPTOP_B_IP=172.20.10.3
 export DVRMS_LAPTOP_C_IP=172.20.10.3
-export DVRMS_LAPTOP_D_IP=172.30.24.117
+export DVRMS_LAPTOP_D_IP=172.30.10.5
 ```
 
 Shared mapping example:
@@ -117,12 +117,12 @@ export DVRMS_SEQUENCER_HOST=172.20.10.4
 
 export DVRMS_RM1_HOST=172.20.10.3
 export DVRMS_RM2_HOST=172.20.10.3
-export DVRMS_RM3_HOST=172.30.24.117
+export DVRMS_RM3_HOST=172.20.10.5
 export DVRMS_RM4_HOST=172.20.10.4
 
 export DVRMS_R1_HOST=172.20.10.3
 export DVRMS_R2_HOST=172.20.10.3
-export DVRMS_R3_HOST=172.30.24.117
+export DVRMS_R3_HOST=172.20.10.5
 export DVRMS_R4_HOST=172.20.10.4
 ```
 

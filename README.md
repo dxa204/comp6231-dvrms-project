@@ -280,6 +280,32 @@ This script:
 
 If those ports are already in use, stop the conflicting process before rerunning the script.
 
+### Run the Front End Mixed-Failure Test
+```bash
+./scripts/run-fe-failure-test.sh
+```
+
+This script:
+- compiles the FE test harness into `out/fe-failure-test`
+- runs `com.dvrms.frontend.FrontEndFailureHandlingTest`
+- verifies the FE handles one software fault and one crash in the same request
+
+It expects to bind local UDP ports `5001` and `7001`-`7004`.
+If those ports are already in use, stop the conflicting process before rerunning the script.
+
+### Run the Replica Manager Recovery Test
+```bash
+./scripts/run-rm-recovery-test.sh
+```
+
+This script:
+- compiles the RM recovery harness into `out/rm-recovery-test`
+- runs `com.dvrms.replica_manager.ReplicaManagerRecoveryTest`
+- verifies that an owning RM restarts its replica and sends `UPDATE` / `RECOVER`
+
+It expects to bind local UDP ports `5000`, `6001`, and `7001`-`7004`.
+If those ports are already in use, stop the conflicting process before rerunning the script.
+
 ## Communication Protocol
 
 All inter-component communication uses **UDP** with pipe-delimited ASCII messages.
@@ -291,7 +317,7 @@ All inter-component communication uses **UDP** with pipe-delimited ASCII message
 | SEQUENCED_REQUEST | Sequencer → Replicas | `REQ\|<msgID>\|<seqNum>\|<feHost>\|<fePort>\|<method>\|<args...>` |
 | ACK | Replica → Sequencer | `ACK\|<replicaID>\|<msgID>` |
 | UPDATE_TARGETS | RM → Sequencer | `UPDATE\|<oldReplicaID>\|<newHost>\|<newPort>` |
-| FAULT_REPORT | FE → RM | `FAULT\|<replicaID>\|<seqNum>` |
+| FAULT_REPORT | FE → RM | `FAULT\|<replicaID>\|<requestToken>` |
 | CRASH_SUSPECT | FE/Sequencer → RM | `CRASH\|<replicaID>` |
 | RESULT | Replica → FE | `RESULT\|<requestID>\|<replicaID>\|<result>` |
 

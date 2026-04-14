@@ -8,12 +8,17 @@ import com.dvrms.common.Config;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class FrontEndImpl extends FrontEndPOA {
 
     private final Map<String, List<Response>> responseMap = new ConcurrentHashMap<>();
     private final Map<String, Integer> faultCount = new ConcurrentHashMap<>();
     private final Map<String, Long> requestStartTime = new ConcurrentHashMap<>();
+    private final Set<String> crashChecksScheduled = ConcurrentHashMap.newKeySet();
+    private final ScheduledExecutorService crashMonitor = Executors.newScheduledThreadPool(1);
 
 
     public FrontEndImpl() throws Exception {
@@ -157,7 +162,8 @@ public class FrontEndImpl extends FrontEndPOA {
                 String result = majorityVote(responses);
 
                 if (result != null) {
-                    detectSoftwareFailure(responses, result, requestID);
+                    detectSoftwareFailure(new ArrayList<>(responses), result, requestID);
+                    scheduleCrashCheck(requestID, timeout - (System.currentTimeMillis() - start));
                     return result;
                 }
             }
@@ -167,6 +173,7 @@ public class FrontEndImpl extends FrontEndPOA {
 
         // Timeout → crash detection
         detectCrash(requestID);
+        cleanupRequest(requestID);
         return "TIMEOUT ERROR";
     }
 
@@ -245,6 +252,27 @@ public class FrontEndImpl extends FrontEndPOA {
                         + Config.DELIMITER + replica);
             }
         }
+    }
+
+    private void scheduleCrashCheck(String requestID, long remainingMs) {
+        if (!crashChecksScheduled.add(requestID)) {
+            return;
+        }
+
+        long delay = Math.max(0, remainingMs);
+        crashMonitor.schedule(() -> {
+            try {
+                detectCrash(requestID);
+            } finally {
+                cleanupRequest(requestID);
+            }
+        }, delay, TimeUnit.MILLISECONDS);
+    }
+
+    private void cleanupRequest(String requestID) {
+        crashChecksScheduled.remove(requestID);
+        responseMap.remove(requestID);
+        requestStartTime.remove(requestID);
     }
 
     private void notifyRM(String message) {

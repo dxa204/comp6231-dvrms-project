@@ -58,7 +58,7 @@ public class ReplicaManager {
  
         // Consecutive distinct-seqNum FAULT reports from the FE
         final AtomicInteger faultCount = new AtomicInteger(0);
-        volatile int lastFaultSeq = -1;
+        volatile String lastFaultToken;
  
         // Is this replica currently considered alive and correct?
         volatile boolean alive = true;
@@ -178,8 +178,8 @@ public class ReplicaManager {
                             break;
  
                         case "FAULT":
-                            // FAULT|<replicaID>|<seqNum>   (from FE)
-                            handleFault(parseReplicaId(parts[1]), Integer.parseInt(parts[2]));
+                            // FAULT|<replicaID>|<requestToken>   (from FE)
+                            handleFault(parseReplicaId(parts[1]), parts[2]);
                             break;
 
                         case "CRASH":
@@ -246,11 +246,11 @@ public class ReplicaManager {
     }
  
     /**
-     * FAULT|<replicaID>|<seqNum>
+     * FAULT|<replicaID>|<requestToken>
      * FE reports that this replica returned a result different from the majority.
-     * After 3 consecutive distinct-seqNum faults, start the coordination protocol.
+     * After 3 consecutive distinct fault tokens, start the coordination protocol.
      */
-    private void handleFault(int replicaId, int seqNum) {
+    private void handleFault(int replicaId, String faultToken) {
         ReplicaInfo info = replicas.get(replicaId);
         if (info == null) {
             System.err.println("[RM " + rmId + "] FAULT for unknown replica " + replicaId);
@@ -258,12 +258,12 @@ public class ReplicaManager {
         }
  
         // De-duplicate: the FE retries its own FAULT reports reliably
-        if (info.lastFaultSeq == seqNum) return;
-        info.lastFaultSeq = seqNum;
+        if (faultToken != null && faultToken.equals(info.lastFaultToken)) return;
+        info.lastFaultToken = faultToken;
  
         int count = info.faultCount.incrementAndGet();
         System.out.println("[RM " + rmId + "] FAULT replica=" + replicaId
-                + " seqNum=" + seqNum + " count=" + count + "/3");
+                + " token=" + faultToken + " count=" + count + "/3");
  
         if (count >= 3) {
             info.faultCount.set(0);
@@ -653,6 +653,11 @@ public class ReplicaManager {
     }
 
     private String replicaMainClass(int replicaId) {
+        String override = System.getProperty("dvrms.replica" + replicaId + ".mainClass");
+        if (override != null && !override.trim().isEmpty()) {
+            return override.trim();
+        }
+
         switch (replicaId) {
             case 1:
                 return "com.dvrms.replica1.Replica1Server";

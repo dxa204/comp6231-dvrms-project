@@ -88,27 +88,47 @@ Important:
 - Laptop A is the single entry point because it hosts the Front End and Sequencer.
 - Laptop A should also run `orbd` on port `1050` because the CLI and replica 2 use the CORBA name service there.
 
-Set the same environment variables on every laptop before starting anything:
+Before startup, each teammate can check their current laptop IP with:
 
 ```bash
-export DVRMS_FE_HOST=192.168.1.10
-export DVRMS_SEQUENCER_HOST=192.168.1.10
+./scripts/show-local-ip.sh
+```
+
+That script prints the detected local IP and example `export` lines.
+
+Set the environment variables before starting anything.
+
+Laptop A on this MacBook currently resolves to `172.20.10.4`, and the launcher can auto-detect that value.
+
+On Laptop A, you can either let the script detect the IP automatically, or set it explicitly:
+
+```bash
+export DVRMS_LAPTOP_A_IP=172.20.10.4
+```
+
+Shared mapping example:
+
+```bash
+export DVRMS_FE_HOST=172.20.10.4
+export DVRMS_SEQUENCER_HOST=172.20.10.4
 
 export DVRMS_RM1_HOST=192.168.1.11
 export DVRMS_RM2_HOST=192.168.1.12
 export DVRMS_RM3_HOST=192.168.1.13
-export DVRMS_RM4_HOST=192.168.1.10
+export DVRMS_RM4_HOST=172.20.10.4
 
 export DVRMS_R1_HOST=192.168.1.11
 export DVRMS_R2_HOST=192.168.1.12
 export DVRMS_R3_HOST=192.168.1.13
-export DVRMS_R4_HOST=192.168.1.10
+export DVRMS_R4_HOST=172.20.10.4
 ```
 
 Notes:
 - `DVRMS_SEQUENCER_HOST` defaults to `DVRMS_FE_HOST` if omitted.
+- On `laptop-a`, `DVRMS_FE_HOST` defaults to `DVRMS_LAPTOP_A_IP`, and `DVRMS_LAPTOP_A_IP` defaults to the Mac's detected primary IP.
 - `DVRMS_R1_HOST` to `DVRMS_R4_HOST` default to their matching RM hosts if omitted.
 - The static mapping is read from `src/main/java/com/dvrms/common/Config.java`.
+- The launcher now passes the detected Laptop A IP into CORBA startup so FE does not try to connect to a stale address like `192.168.1.10`.
 
 Start each laptop with the role-based launcher:
 

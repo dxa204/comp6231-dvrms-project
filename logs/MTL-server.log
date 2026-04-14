@@ -93,3 +93,7 @@
 2026-04-14T11:54:45.268 [MTL] [main] removeVehicle OK manager=MTLM1234 vehicleID=MTL3012 cancelledReservations=1 clearedWaitlist=0 totalRefund=120
 2026-04-14T13:14:20.437 [MTL] [pool-1-thread-1] UDP listening on port 7401
 2026-04-14T13:31:47.251 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T14:44:20.885 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T14:48:44.413 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T14:59:58.571 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T15:01:03.578 [MTL] [pool-1-thread-1] UDP listening on port 7401

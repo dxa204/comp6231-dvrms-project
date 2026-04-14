@@ -30,7 +30,42 @@ if [[ "${JAVA_VERSION}" != *"1.8"* && "${JAVA_VERSION}" != *" 8."* && "${JAVA_VE
   exit 1
 fi
 
-required_vars=(DVRMS_FE_HOST DVRMS_RM1_HOST DVRMS_RM2_HOST DVRMS_RM3_HOST DVRMS_RM4_HOST)
+detect_local_ip() {
+  local primary_iface=""
+  local detected_ip=""
+
+  primary_iface="$(route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}')"
+  if [[ -n "${primary_iface}" ]]; then
+    detected_ip="$(ipconfig getifaddr "${primary_iface}" 2>/dev/null || true)"
+  fi
+
+  if [[ -z "${detected_ip}" ]]; then
+    detected_ip="$(ifconfig 2>/dev/null | awk '/inet / && $2 != "127.0.0.1" {print $2; exit}')"
+  fi
+
+  if [[ -z "${detected_ip}" ]]; then
+    detected_ip="127.0.0.1"
+  fi
+
+  printf '%s\n' "${detected_ip}"
+}
+
+LOCAL_NODE_IP="$(detect_local_ip)"
+
+case "${ROLE}" in
+  laptop-a)
+    FE_HOST="${DVRMS_FE_HOST:-${DVRMS_LAPTOP_A_IP:-${LOCAL_NODE_IP}}}"
+    RM4_HOST="${DVRMS_RM4_HOST:-${FE_HOST}}"
+    R4_HOST="${DVRMS_R4_HOST:-${RM4_HOST}}"
+    ;;
+  *)
+    FE_HOST="${DVRMS_FE_HOST:-}"
+    RM4_HOST="${DVRMS_RM4_HOST:-${FE_HOST}}"
+    R4_HOST="${DVRMS_R4_HOST:-${RM4_HOST}}"
+    ;;
+esac
+
+required_vars=(DVRMS_RM1_HOST DVRMS_RM2_HOST DVRMS_RM3_HOST)
 for var_name in "${required_vars[@]}"; do
   if [[ -z "${!var_name:-}" ]]; then
     echo "Missing required environment variable: ${var_name}" >&2
@@ -38,11 +73,15 @@ for var_name in "${required_vars[@]}"; do
   fi
 done
 
-SEQ_HOST="${DVRMS_SEQUENCER_HOST:-${DVRMS_FE_HOST}}"
+if [[ -z "${FE_HOST}" ]]; then
+  echo "Missing required environment variable: DVRMS_FE_HOST" >&2
+  exit 1
+fi
+
+SEQ_HOST="${DVRMS_SEQUENCER_HOST:-${FE_HOST}}"
 R1_HOST="${DVRMS_R1_HOST:-${DVRMS_RM1_HOST}}"
 R2_HOST="${DVRMS_R2_HOST:-${DVRMS_RM2_HOST}}"
 R3_HOST="${DVRMS_R3_HOST:-${DVRMS_RM3_HOST}}"
-R4_HOST="${DVRMS_R4_HOST:-${DVRMS_RM4_HOST}}"
 
 LOG_DIR="${ROOT_DIR}/out/distributed-logs/${ROLE}"
 PID_FILE="${LOG_DIR}/pids.txt"
@@ -88,12 +127,12 @@ compile_sources() {
 }
 
 COMMON_PROPS=(
-  "-Ddvrms.fe.host=${DVRMS_FE_HOST}"
+  "-Ddvrms.fe.host=${FE_HOST}"
   "-Ddvrms.sequencer.host=${SEQ_HOST}"
   "-Ddvrms.rm1.host=${DVRMS_RM1_HOST}"
   "-Ddvrms.rm2.host=${DVRMS_RM2_HOST}"
   "-Ddvrms.rm3.host=${DVRMS_RM3_HOST}"
-  "-Ddvrms.rm4.host=${DVRMS_RM4_HOST}"
+  "-Ddvrms.rm4.host=${RM4_HOST}"
   "-Ddvrms.replica1.host=${R1_HOST}"
   "-Ddvrms.replica2.host=${R2_HOST}"
   "-Ddvrms.replica3.host=${R3_HOST}"
@@ -117,28 +156,29 @@ compile_sources
 
 case "${ROLE}" in
   laptop-a)
-    start_process "orbd" "${JAVA_CMD}" -cp "${OUT_DIR}" com.sun.corba.se.impl.naming.cosnaming.TransientNameServer -ORBInitialPort 1050
+    echo "Using laptop-a IP: ${FE_HOST}"
+    start_process "orbd" "${JAVA_CMD}" "-Dcom.sun.CORBA.ORBServerHost=${FE_HOST}" -cp "${OUT_DIR}" com.sun.corba.se.impl.naming.cosnaming.TransientNameServer -ORBInitialPort 1050
     sleep 2
     start_process "sequencer" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -cp "${OUT_DIR}" com.dvrms.sequencer.Sequencer
-    start_process "rm4" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -Dsequencer.host="${SEQ_HOST}" -Dorb.host="${DVRMS_FE_HOST}" -Drm.host="${DVRMS_RM4_HOST}" -cp "${OUT_DIR}" com.dvrms.replica_manager.ReplicaManager 4 1 "${DVRMS_RM1_HOST}" 7001 2 "${DVRMS_RM2_HOST}" 7002 3 "${DVRMS_RM3_HOST}" 7003
+    start_process "rm4" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -Dsequencer.host="${SEQ_HOST}" -Dorb.host="${FE_HOST}" -Drm.host="${RM4_HOST}" -cp "${OUT_DIR}" com.dvrms.replica_manager.ReplicaManager 4 1 "${DVRMS_RM1_HOST}" 7001 2 "${DVRMS_RM2_HOST}" 7002 3 "${DVRMS_RM3_HOST}" 7003
     start_process "replica4" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -cp "${OUT_DIR}" com.dvrms.replica4.Replica4Server
     sleep 2
-    start_process "frontend" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -Dorb.host="${DVRMS_FE_HOST}" -Dorb.port=1050 -cp "${OUT_DIR}" com.dvrms.frontend.CORBAServer
+    start_process "frontend" "${JAVA_CMD}" "${COMMON_PROPS[@]}" "-Dcom.sun.CORBA.ORBServerHost=${FE_HOST}" -Dorb.host="${FE_HOST}" -Dorb.port=1050 -cp "${OUT_DIR}" com.dvrms.frontend.CORBAServer
     ;;
   laptop-b)
-    start_process "rm1" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -Dsequencer.host="${SEQ_HOST}" -Dorb.host="${DVRMS_FE_HOST}" -Drm.host="${DVRMS_RM1_HOST}" -cp "${OUT_DIR}" com.dvrms.replica_manager.ReplicaManager 1 2 "${DVRMS_RM2_HOST}" 7002 3 "${DVRMS_RM3_HOST}" 7003 4 "${DVRMS_RM4_HOST}" 7004
+    start_process "rm1" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -Dsequencer.host="${SEQ_HOST}" -Dorb.host="${FE_HOST}" -Drm.host="${DVRMS_RM1_HOST}" -cp "${OUT_DIR}" com.dvrms.replica_manager.ReplicaManager 1 2 "${DVRMS_RM2_HOST}" 7002 3 "${DVRMS_RM3_HOST}" 7003 4 "${RM4_HOST}" 7004
     sleep 1
     start_process "replica1" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -cp "${OUT_DIR}" com.dvrms.replica1.Replica1Server
     ;;
   laptop-c)
-    start_process "rm2" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -Dsequencer.host="${SEQ_HOST}" -Dorb.host="${DVRMS_FE_HOST}" -Drm.host="${DVRMS_RM2_HOST}" -cp "${OUT_DIR}" com.dvrms.replica_manager.ReplicaManager 2 1 "${DVRMS_RM1_HOST}" 7001 3 "${DVRMS_RM3_HOST}" 7003 4 "${DVRMS_RM4_HOST}" 7004
+    start_process "rm2" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -Dsequencer.host="${SEQ_HOST}" -Dorb.host="${FE_HOST}" -Drm.host="${DVRMS_RM2_HOST}" -cp "${OUT_DIR}" com.dvrms.replica_manager.ReplicaManager 2 1 "${DVRMS_RM1_HOST}" 7001 3 "${DVRMS_RM3_HOST}" 7003 4 "${RM4_HOST}" 7004
     sleep 1
     for city in MTL WPG BNF; do
-      start_process "replica2_${city}" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -Dorb.host="${DVRMS_FE_HOST}" -cp "${OUT_DIR}" com.dvrms.replica2.VehicleServer "${city}" "2" "${DVRMS_RM2_HOST}" "7002"
+      start_process "replica2_${city}" "${JAVA_CMD}" "${COMMON_PROPS[@]}" "-Dcom.sun.CORBA.ORBServerHost=${FE_HOST}" -Dorb.host="${FE_HOST}" -cp "${OUT_DIR}" com.dvrms.replica2.VehicleServer "${city}" "2" "${DVRMS_RM2_HOST}" "7002"
     done
     ;;
   laptop-d)
-    start_process "rm3" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -Dsequencer.host="${SEQ_HOST}" -Dorb.host="${DVRMS_FE_HOST}" -Drm.host="${DVRMS_RM3_HOST}" -cp "${OUT_DIR}" com.dvrms.replica_manager.ReplicaManager 3 1 "${DVRMS_RM1_HOST}" 7001 2 "${DVRMS_RM2_HOST}" 7002 4 "${DVRMS_RM4_HOST}" 7004
+    start_process "rm3" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -Dsequencer.host="${SEQ_HOST}" -Dorb.host="${FE_HOST}" -Drm.host="${DVRMS_RM3_HOST}" -cp "${OUT_DIR}" com.dvrms.replica_manager.ReplicaManager 3 1 "${DVRMS_RM1_HOST}" 7001 2 "${DVRMS_RM2_HOST}" 7002 4 "${RM4_HOST}" 7004
     sleep 1
     start_process "replica3" "${JAVA_CMD}" "${COMMON_PROPS[@]}" -cp "${OUT_DIR}" com.dvrms.replica3.Replica3Server
     ;;
@@ -160,5 +200,5 @@ PID file:
   ${PID_FILE}
 
 CLI command:
-  ${JAVA_CMD} -Dorb.host=${DVRMS_FE_HOST} -Dorb.port=1050 -cp ${OUT_DIR} com.dvrms.frontend.FrontEndCLI
+  ${JAVA_CMD} -Dorb.host=${FE_HOST} -Dorb.port=1050 -cp ${OUT_DIR} com.dvrms.frontend.FrontEndCLI
 EOF

@@ -106,6 +106,10 @@ public class ReplicaManager {
  
     // Guard against concurrent replacement of the same replica
     private final Set<Integer> replacing = ConcurrentHashMap.newKeySet();
+
+    // Processes started by this RM during recovery. Key is either "<replicaId>"
+    // or "<replicaId>_<city>" for replica2's separate city servers.
+    private final ConcurrentHashMap<String, Process> managedProcesses = new ConcurrentHashMap<>();
  
     // De-duplication: don't start a second CHECK round while one is running
     private final Set<Integer> checkInProgress = ConcurrentHashMap.newKeySet();
@@ -465,16 +469,7 @@ public class ReplicaManager {
             }
  
             System.out.println("[RM " + rmId + "] I own replica " + replicaId + " -- restarting");
- 
-            // Step 1: Tell the old process to shut down (in case it is still running)
-            try {
-                sendUDP(info.host, info.listenPort, "CRASH|" + replicaId);
-            } catch (Exception ignored) { /* already dead is fine */ }
- 
-            // Step 2: Give the port time to be released
-            Thread.sleep(1500);
- 
-            // Step 3: Restart the actual replica implementation for this replicaId.
+
             List<String> cities = new ArrayList<>();
             for (String key : replicasByKey.keySet()) {
                 if (key.startsWith(replicaId + "_")) {
@@ -482,6 +477,36 @@ public class ReplicaManager {
                 }
             }
             if (cities.isEmpty()) cities.add(info.city); // fallback: single-city mode
+
+            // Step 1: Tell every city process for this replica to shut down.
+            if (replicaId == 2) {
+                for (String city : cities) {
+                    String rKey = replicaId + "_" + city;
+                    ReplicaInfo cityInfo = replicasByKey.getOrDefault(rKey, info);
+                    try {
+                        sendUDP(cityInfo.host, cityInfo.listenPort, "CRASH|" + replicaId);
+                    } catch (Exception ignored) { /* already dead is fine */ }
+                    terminateManagedProcess(rKey);
+                }
+            } else {
+                try {
+                    sendUDP(info.host, info.listenPort, "CRASH|" + replicaId);
+                } catch (Exception ignored) { /* already dead is fine */ }
+                terminateManagedProcess(String.valueOf(replicaId));
+            }
+
+            // Step 2: Wait for old listener ports to be released before restarting.
+            if (replicaId == 2) {
+                for (String city : cities) {
+                    String rKey = replicaId + "_" + city;
+                    ReplicaInfo cityInfo = replicasByKey.getOrDefault(rKey, info);
+                    waitForUdpPortToBeFree(cityInfo.listenPort, 5000);
+                }
+            } else {
+                waitForUdpPortToBeFree(info.listenPort, 5000);
+            }
+
+            // Step 3: Restart the actual replica implementation for this replicaId.
 
             Process lastProcess = null;
             if (replicaId == 2) {
@@ -491,11 +516,13 @@ public class ReplicaManager {
                     lastProcess = new ProcessBuilder(buildJavaCommand(
                             "com.dvrms.replica2.VehicleServer",
                             cityInfo.launchArgs)).inheritIO().start();
+                    managedProcesses.put(rKey, lastProcess);
                     System.out.println("[RM " + rmId + "] Restarted " + city
                             + " server for replica " + replicaId + " (pid=" + getProcessId(lastProcess) + ")");
                 }
             } else {
                 lastProcess = new ProcessBuilder(buildJavaCommand(replicaMainClass(replicaId))).inheritIO().start();
+                managedProcesses.put(String.valueOf(replicaId), lastProcess);
                 System.out.println("[RM " + rmId + "] Restarted replica " + replicaId
                         + " (pid=" + getProcessId(lastProcess) + ")");
             }
@@ -571,6 +598,45 @@ public class ReplicaManager {
         }
 
         return -1L;
+    }
+
+    private void terminateManagedProcess(String key) {
+        Process existing = managedProcesses.remove(key);
+        if (existing == null) {
+            return;
+        }
+
+        try {
+            existing.destroy();
+            existing.waitFor(1000, TimeUnit.MILLISECONDS);
+            if (existing.isAlive()) {
+                existing.destroyForcibly();
+                existing.waitFor(1000, TimeUnit.MILLISECONDS);
+            }
+        } catch (Exception ignored) {
+            // Recovery should keep going even if the old child is already gone.
+        }
+    }
+
+    private void waitForUdpPortToBeFree(int port, long timeoutMs) throws Exception {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            if (isUdpPortFree(port)) {
+                return;
+            }
+            Thread.sleep(200);
+        }
+        throw new BindException("UDP port " + port + " is still in use");
+    }
+
+    private boolean isUdpPortFree(int port) {
+        try (DatagramSocket socket = new DatagramSocket(null)) {
+            socket.setReuseAddress(false);
+            socket.bind(new InetSocketAddress("0.0.0.0", port));
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private List<String> buildJavaCommand(String mainClass, String... args) {

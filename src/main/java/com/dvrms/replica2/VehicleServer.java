@@ -37,6 +37,13 @@ public class VehicleServer extends DVRMSPOA {
     // vehicleID -> lock
     private final ConcurrentHashMap<String, ReentrantLock> recordLocks = new ConcurrentHashMap<>();
 
+    // customerID|vehicleID|start|end -> first unavailable observation time
+    private final ConcurrentHashMap<String, Long> pendingWaitlistConfirm = new ConcurrentHashMap<>();
+
+    // customerID -> officeCode -> count
+    private final ConcurrentHashMap<String, ConcurrentHashMap<String, Integer>> customerReservedFromOffice =
+            new ConcurrentHashMap<>();
+
     // Total-order sequencing
     private final Object seqLock = new Object();
     private int nextExpectedSeq = 1;
@@ -247,6 +254,15 @@ public class VehicleServer extends DVRMSPOA {
                     // args: cID vtype
                     result = findVehicle(parts[6], parts[7]);
                     break;
+                case "displayCurrentBudget":
+                    result = displayCurrentBudget(parts[6]);
+                    break;
+                case "displayReservations":
+                    result = displayReservations(parts[6]);
+                    break;
+                case "displayReservationsLocal":
+                    result = displayReservationsLocal(parts[6]);
+                    break;
                 case "remoteReserveVehicle":
                 case "remoteCancelReservation":
                 case "addToWaitingList":
@@ -314,14 +330,87 @@ public class VehicleServer extends DVRMSPOA {
         return vID.startsWith(city);
     }
 
+    private static String officeOfUser(String userID) {
+        return userID.substring(0, 3);
+    }
+
+    private static String officeOfVehicle(String vehicleID) {
+        return vehicleID.substring(0, 3);
+    }
+
+    private boolean isManager(String managerID) {
+        return managerID != null && managerID.length() >= 4 && Character.toUpperCase(managerID.charAt(3)) == 'M';
+    }
+
+    private boolean isCustomer(String customerID) {
+        return customerID != null && customerID.length() >= 4 && Character.toUpperCase(customerID.charAt(3)) == 'U';
+    }
+
+    private String requireHomeManager(String managerID) {
+        if (!isManager(managerID)) {
+            return "ERROR: Not a manager.";
+        }
+        if (!officeOfUser(managerID).equalsIgnoreCase(city)) {
+            return "ERROR: Call your HOME office server.";
+        }
+        return null;
+    }
+
+    private String requireHomeCustomer(String customerID) {
+        if (!isCustomer(customerID)) {
+            return "ERROR: Not a customer.";
+        }
+        if (!officeOfUser(customerID).equalsIgnoreCase(city)) {
+            return "ERROR: Call your HOME office server.";
+        }
+        return null;
+    }
+
+    private int getTotalRemoteReservedCount(String customerID, String homeOffice) {
+        Map<String, Integer> counts = customerReservedFromOffice.computeIfAbsent(
+                customerID, ignored -> new ConcurrentHashMap<>());
+
+        int total = 0;
+        for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+            if (!entry.getKey().equals(homeOffice)) {
+                total += entry.getValue() == null ? 0 : entry.getValue();
+            }
+        }
+        return total;
+    }
+
+    private void incrementReservationCount(String customerID, String officeCode) {
+        customerReservedFromOffice
+                .computeIfAbsent(customerID, ignored -> new ConcurrentHashMap<>())
+                .merge(officeCode, 1, Integer::sum);
+    }
+
+    private void decrementReservationCount(String customerID, String officeCode) {
+        ConcurrentHashMap<String, Integer> counts =
+                customerReservedFromOffice.computeIfAbsent(customerID, ignored -> new ConcurrentHashMap<>());
+        counts.merge(officeCode, -1, Integer::sum);
+        Integer updated = counts.get(officeCode);
+        if (updated != null && updated <= 0) {
+            counts.remove(officeCode);
+        }
+    }
+
     // ================= MANAGER =================
 
     public String addVehicle(String mID, String vnum, String vtype, String vID, double price) {
-        if (!mID.toLowerCase().startsWith(city.toLowerCase()) || mID.toLowerCase().charAt(3) != 'm')
-            return "Invalid city or not a manager";
+        String managerOffice = officeOfUser(mID);
+        if (!managerOffice.equalsIgnoreCase(city)) {
+            try {
+                return getRemoteServer(managerOffice).addVehicle(mID, vnum, vtype, vID, price);
+            } catch (Exception e) {
+                return "ERROR: UDP failed to " + managerOffice + " (" + e.getMessage() + ")";
+            }
+        }
 
-        if (!vID.toLowerCase().startsWith(city.toLowerCase()))
-            return "Invalid city for this vehicle";
+        String accessError = requireHomeManager(mID);
+        if (accessError != null) return accessError;
+        if (!officeOfVehicle(vID).equalsIgnoreCase(city))
+            return "ERROR: vehicleID does not belong to this office server.";
 
         ReentrantLock lock = lockFor(vID);
         lock.lock();
@@ -331,13 +420,15 @@ public class VehicleServer extends DVRMSPOA {
             vehicles.put(vID, new Vehicle(vID, vtype, vnum, price));
  
             if (isUpdate) {
-                Logger.log(city, mID + " updated vehicle " + vtype + " with license plate " + vnum
-                        + " and vehicle ID " + vID + " and with a cost of " + price, "manager");
-                return "Vehicle updated";
+                Logger.log(city, "addVehicle UPDATE manager=" + mID + " vehicleID=" + vID
+                        + " type=" + vtype + " price=" + price, "manager");
+                promoteWaitlist(vID);
+                return "SUCCESS: vehicle updated " + vID;
             } else {
-                Logger.log(city, mID + " added vehicle " + vtype + " with license plate " + vnum
-                        + " and vehicle ID " + vID + " and with a cost of " + price, "manager");
-                return "Vehicle added";
+                Logger.log(city, "addVehicle NEW manager=" + mID + " vehicleID=" + vID
+                        + " type=" + vtype + " price=" + price, "manager");
+                promoteWaitlist(vID);
+                return "SUCCESS: vehicle added " + vID;
             }
         } finally {
             lock.unlock();
@@ -345,62 +436,108 @@ public class VehicleServer extends DVRMSPOA {
     }
 
     public String removeVehicle(String mID, String vID) {
-        if (!mID.toLowerCase().startsWith(city.toLowerCase()) || mID.toLowerCase().charAt(3) != 'm')
-            return "Invalid city or not a manager";
+        String managerOffice = officeOfUser(mID);
+        if (!managerOffice.equalsIgnoreCase(city)) {
+            try {
+                return getRemoteServer(managerOffice).removeVehicle(mID, vID);
+            } catch (Exception e) {
+                return "ERROR: UDP failed to " + managerOffice + " (" + e.getMessage() + ")";
+            }
+        }
 
-        if (!vID.toLowerCase().startsWith(city.toLowerCase()))
-            return "Invalid city for this vehicle";
+        String accessError = requireHomeManager(mID);
+        if (accessError != null) return accessError;
+        if (!officeOfVehicle(vID).equalsIgnoreCase(city))
+            return "ERROR: vehicleID does not belong to this office server.";
 
         ReentrantLock lock = lockFor(vID);
         lock.lock();
         try {
             if(!vehicles.containsKey(vID) && !reservations.containsKey(vID)) {
-                return "Vehicle does not exist";
+                return "ERROR: vehicle does not exist.";
             }
             vehicles.remove(vID);
 
             // Refund all customers who had active reservations for this vehicle
             List<Reservation> activeReservations = reservations.remove(vID);
+            int cancelled = 0;
+            double totalRefund = 0.0;
             if (activeReservations != null) {
                 for (Reservation r : activeReservations) {
                     budgets.compute(r.customerID, (k, b) -> (b == null ? 0.0 : b) + r.vehicle.price);
-                    Logger.log(city, "Refunded customer " + r.customerID + " for removed vehicle " + vID, "manager");
+                    decrementReservationCount(r.customerID, officeOfVehicle(vID));
+                    cancelled++;
+                    totalRefund += r.vehicle.price;
+                    Logger.log(city, "removeVehicle CANCELLED reservation customer=" + r.customerID
+                            + " vehicle=" + vID + " refund=" + r.vehicle.price, "manager");
                 }
             }
  
             // Clear the waitlist for this vehicle
             Queue<Reservation> wl = waitlists.remove(vID);
+            int waitlisted = wl == null ? 0 : wl.size();
             if (wl != null && !wl.isEmpty()) {
                 Logger.log(city, "Cleared waitlist for removed vehicle " + vID, "manager");
             }
 
-	        Logger.log(city, mID + " removed vehicle with vehicle ID " + vID, "manager");
-            return "Vehicle removed";
+	        Logger.log(city, "removeVehicle OK manager=" + mID + " vehicleID=" + vID
+                    + " cancelledReservations=" + cancelled + " clearedWaitlist=" + waitlisted
+                    + " totalRefund=" + totalRefund, "manager");
+            return "SUCCESS: removed " + vID
+                    + " cancelledReservations=" + cancelled
+                    + " clearedWaitlist=" + waitlisted
+                    + " totalRefund=" + (int) totalRefund;
         } finally {
             lock.unlock();
         }
     }
 
     public String listAvailableVehicle(String mID) {
-        if (!mID.toLowerCase().startsWith(city.toLowerCase()) || mID.toLowerCase().charAt(3) != 'm')
-            return "Invalid city or not a manager";
+        String managerOffice = officeOfUser(mID);
+        if (!managerOffice.equalsIgnoreCase(city)) {
+            try {
+                return getRemoteServer(managerOffice).listAvailableVehicle(mID);
+            } catch (Exception e) {
+                return "ERROR: UDP failed to " + managerOffice + " (" + e.getMessage() + ")";
+            }
+        }
+
+        String accessError = requireHomeManager(mID);
+        if (accessError != null) return accessError;
 
         StringBuilder sb = new StringBuilder();
-        vehicles.values().forEach(v -> sb.append(v.vehicleID).append(" ")
-                .append(v.vehicleType).append(" ").append(v.vehicleNumber).append(" ").append(v.price).append("\n"));
+        sb.append("Vehicle Availability for today (").append(LocalDate.now()).append(")\n");
+        vehicles.values().forEach(v -> sb.append(v.vehicleID)
+                .append(" type=").append(v.vehicleType)
+                .append(" price=").append((int) v.price)
+                .append(" statusToday=").append(reservedCountForToday(v.vehicleID) == 0 ? "AVAILABLE" : "RESERVED")
+                .append(" waitlist=").append(waitlists.getOrDefault(v.vehicleID, new ConcurrentLinkedQueue<Reservation>()).size())
+                .append("\n"));
         return sb.toString();
     }
 
     // ================= CUSTOMER =================
 
     public String reserveVehicle(String cID, String vID, String start, String end) {
-        if (cID.toLowerCase().charAt(3) != 'u')
-            return "Not a user";
+        if (!isCustomer(cID)) {
+            return "ERROR: Not a customer.";
+        }
 
         budgets.putIfAbsent(cID, 1000.0);
 
-        if (!local(vID))
-            return forwardReserve(cID, vID, start, end);
+        String homeOffice = officeOfUser(cID);
+        String targetOffice = officeOfVehicle(vID);
+        if (!targetOffice.equals(homeOffice) && getTotalRemoteReservedCount(cID, homeOffice) >= 1) {
+            return "ERROR: You can only reserve ONE vehicle outside your home office (" + homeOffice + ").";
+        }
+
+        if (!local(vID)) {
+            String accessError = requireHomeCustomer(cID);
+            if (accessError != null) return accessError;
+            return forwardReserve(targetOffice, cID, vID, start, end);
+        }
+
+        boolean chargeHomeBudget = homeOffice.equalsIgnoreCase(city);
 
         ReentrantLock lock = lockFor(vID);
         lock.lock();
@@ -411,74 +548,128 @@ public class VehicleServer extends DVRMSPOA {
                 return "Vehicle does not exist";
 
             double cost = v.price;
-            if (budgets.get(cID) < cost)
-                return "Insufficient budget";
+            if (chargeHomeBudget && budgets.get(cID) < cost)
+                return "ERROR: Over budget.";
             
             if (!isAvailable(vID, start, end)) {
+                String waitlistKey = cID + "|" + vID + "|" + start + "|" + end;
+                if (!pendingWaitlistConfirm.containsKey(waitlistKey)) {
+                    pendingWaitlistConfirm.put(waitlistKey, System.currentTimeMillis());
+                    Logger.log(city, "reserveVehicle UNAVAILABLE " + cID + " " + vID
+                            + " " + start + "-" + end, "customer");
+                    return "UNAVAILABLE: Vehicle not available for that period. Call reserveVehicle again with same inputs to join waitlist.";
+                }
+
+                pendingWaitlistConfirm.remove(waitlistKey);
                 waitlists.computeIfAbsent(vID, k -> new ConcurrentLinkedQueue<>()).add(new Reservation(cID, start, end, v));
-                Logger.log(city, "Customer " + cID + " added to waitlist for " + vID, "customer");
-                return "Vehicle not in stock, because it is reserved for some time during that time period";
+                Logger.log(city, "reserveVehicle WAITLISTED " + cID + " " + vID
+                        + " " + start + "-" + end, "customer");
+                return "WAITLISTED: " + vID + " for " + start + "-" + end;
             }
 
             reservations.computeIfAbsent(vID, k -> new ArrayList<>()).add(new Reservation(cID, start, end, v));
 
-            budgets.compute(cID, (k, b) -> b - cost);
+            if (chargeHomeBudget) {
+                budgets.compute(cID, (k, b) -> b - cost);
+                incrementReservationCount(cID, city);
+            }
 
             Logger.log(city,"Customer " + cID + " reserved " + vID + " from " + start + " to " + end, "customer");
             
-            return "Reserved";
+            return "SUCCESS|"+ (int) cost;
         } finally {
             lock.unlock();
         }
     }
 
     public String updateReservation(String cID, String vID, String start, String end) {
-        if (cID.toLowerCase().charAt(3) != 'u')
-            return "Not a user";
+        if (!isCustomer(cID)) {
+            return "ERROR: Not a customer.";
+        }
         
-        if (!local(vID))
-            return forwardUpdate(cID, vID, start, end);
+        String homeOffice = officeOfUser(cID);
+        String targetOffice = officeOfVehicle(vID);
+        if (!local(vID)) {
+            return forwardUpdate(targetOffice, cID, vID, start, end);
+        }
+
+        boolean chargeHomeBudget = homeOffice.equalsIgnoreCase(city);
         try {
             ReentrantLock lock = lockFor(vID);
             lock.lock();
             
             try {
                 List<Reservation> list = reservations.get(vID);
-                if (list == null) {
-                    return "No reservation";
-                }
-                else {
-                    Reservation target = null;
-                    for (Reservation r : list)
-                        if (r.customerID.equals(cID))
+                Reservation target = null;
+                if (list != null) {
+                    for (Reservation r : list) {
+                        if (r.customerID.equals(cID)) {
                             target = r;
-                    if (target == null) {
-                        Queue<Reservation> queue = waitlists.get(vID);
-                        boolean foundInWaitlist = false;
-                        if (queue != null) {
-                            for (Reservation r : queue) {
-                                if (r.customerID.equals(cID)) {
-                                    r.start = start;
-                                    r.end = end;
-                                    foundInWaitlist = true;
-                                    break;
-                                }
+                        }
+                    }
+                }
+                if (target == null) {
+                    Queue<Reservation> queue = waitlists.get(vID);
+                    Reservation waitlisted = null;
+                    if (queue != null) {
+                        for (Reservation r : queue) {
+                            if (r.customerID.equals(cID)) {
+                                waitlisted = r;
+                                break;
                             }
                         }
-                        return foundInWaitlist ? "Waitlist entry updated" : "No reservation or waitlist entry found";
+                    }
+                    if (waitlisted == null) {
+                        return "ERROR: No current reservation or waitlist for this vehicle.";
+                    }
+
+                    if (!isAvailable(vID, start, end)) {
+                        return "UNAVAILABLE: Vehicle not available for updated period.";
+                    }
+
+                    double cost = waitlisted.vehicle.price;
+                    if (chargeHomeBudget && budgets.getOrDefault(cID, 1000.0) < cost) {
+                        return "ERROR: Over budget.";
+                    }
+
+                    queue.remove(waitlisted);
+                    waitlisted.start = start;
+                    waitlisted.end = end;
+                    reservations.computeIfAbsent(vID, k -> new ArrayList<>()).add(waitlisted);
+
+                    if (chargeHomeBudget) {
+                        budgets.compute(cID, (k, b) -> b - cost);
+                        incrementReservationCount(cID, city);
+                        return "SUCCESS: updated " + vID;
+                    }
+
+                    return "SUCCESS|" + (int) cost;
+                } else {
+                    list.remove(target);
+                    if (isAvailable(vID, start, end)) {
+                        target.start = start;
+                        target.end = end;
+                        list.add(target);
+                        return "SUCCESS: updated " + vID;
                     }
                     else {
-                        list.remove(target);
-                        if (isAvailable(vID, start, end)) {
-                            target.start = start;
-                            target.end = end;
+                        String waitlistKey = cID + "|" + vID + "|" + start + "|" + end;
+                        if (!pendingWaitlistConfirm.containsKey(waitlistKey)) {
+                            pendingWaitlistConfirm.put(waitlistKey, System.currentTimeMillis());
                             list.add(target);
-                            return "Updated";
+                            return "UNAVAILABLE: Vehicle not available for updated period.";
                         }
-                        else {
-                            list.add(target);
-                            return "Update failed: new dates conflict with an existing reservation";
+
+                        pendingWaitlistConfirm.remove(waitlistKey);
+                        if (chargeHomeBudget) {
+                            final double refund = target.vehicle.price;
+                            budgets.compute(cID, (k, b) -> b + refund);
+                            decrementReservationCount(cID, city);
                         }
+                        waitlists.computeIfAbsent(vID, k -> new ConcurrentLinkedQueue<>())
+                                .add(new Reservation(cID, start, end, target.vehicle));
+                        promoteWaitlist(vID);
+                        return "WAITLISTED: " + vID + " for " + start + "-" + end;
                     }
                 }
             }
@@ -493,11 +684,17 @@ public class VehicleServer extends DVRMSPOA {
     
     @Override
 	public String cancelReservation(String cID, String vID) {
-        if (cID.toLowerCase().charAt(3) != 'u')
-            return "Not a user";
+        if (!isCustomer(cID)) {
+            return "ERROR: Not a customer.";
+        }
 
-	    if (!local(vID))
-	        return forwardCancel(cID, vID);
+        String homeOffice = officeOfUser(cID);
+        String targetOffice = officeOfVehicle(vID);
+        if (!local(vID)) {
+            return forwardCancel(targetOffice, cID, vID);
+        }
+
+        boolean refundHomeBudget = homeOffice.equalsIgnoreCase(city);
 
 	    ReentrantLock lock = lockFor(vID);
 	    lock.lock();
@@ -510,10 +707,14 @@ public class VehicleServer extends DVRMSPOA {
                     Reservation r = it.next();
                     if (r.customerID.equals(cID)) {
                         it.remove();
-                        budgets.compute(cID, (k, b) -> b + r.vehicle.price);
+                        if (refundHomeBudget) {
+                            budgets.compute(cID, (k, b) -> b + r.vehicle.price);
+                            decrementReservationCount(cID, city);
+                            retryWaitlistsForCustomer(cID);
+                        }
                         Logger.log(city,"Customer " + cID + " cancelled their reservation for " + vID, "customer");
                         promoteWaitlist(vID);
-                        return "Cancelled";
+                        return "SUCCESS|" + (int) r.vehicle.price;
                     }
                 }
             }
@@ -528,46 +729,167 @@ public class VehicleServer extends DVRMSPOA {
                         it.remove();
                         // No budget refund — waitlisted customers were never charged
                         Logger.log(city, "Customer " + cID + " removed from waitlist for " + vID, "customer");
-                        return "Removed from waitlist";
+                        return "SUCCESS|0";
                     }
                 }
             }
 
-	        return "No reservation or waitlist entry found";
+	        return "ERROR: no reservation found.";
 	    } finally {
 	        lock.unlock();
 	    }
 	}
 
 	public String findVehicle(String cID, String vtype) {
-        if (cID.toLowerCase().charAt(3) != 'u')
-            return "Not a user";
+        if (!cID.endsWith("XXXX")) {
+            if (!isCustomer(cID)) {
+                return "ERROR: Not a customer.";
+            }
+        }
 
 	    StringBuilder result = new StringBuilder();
         
         // local search
         result.append(findLocalVehicle(vtype));
         
-        if (!cID.substring(4).equals("XXXX")) {
-            if (!city.equals("MTL"))
-                result.append(queryRemote("MTL", vtype));
- 
-            if (!city.equals("WPG"))
-                result.append(queryRemote("WPG", vtype));
- 
-            if (!city.equals("BNF"))
-                result.append(queryRemote("BNF", vtype));
-        }
+        if (!city.equals("MTL"))
+            result.append(queryRemote("MTL", vtype));
+
+        if (!city.equals("WPG"))
+            result.append(queryRemote("WPG", vtype));
+
+        if (!city.equals("BNF"))
+            result.append(queryRemote("BNF", vtype));
 
 	    return result.toString();
 	}
+
+    public String displayCurrentBudget(String customerID) {
+        String homeOffice = officeOfUser(customerID);
+        if (!homeOffice.equalsIgnoreCase(city)) {
+            try {
+                return getRemoteServer(homeOffice).displayCurrentBudget(customerID);
+            } catch (Exception e) {
+                return "ERROR: UDP failed to " + homeOffice + " (" + e.getMessage() + ")";
+            }
+        }
+
+        String accessError = requireHomeCustomer(customerID);
+        if (accessError != null) return accessError;
+
+        double currentBudget = budgets.getOrDefault(customerID, 1000.0);
+        Logger.log(city, "displayCurrentBudget customer=" + customerID + " budget=" + (int) currentBudget, "customer");
+        return "Current budget: " + (int) currentBudget;
+    }
+
+    public String displayReservations(String customerID) {
+        String homeOffice = officeOfUser(customerID);
+        if (!homeOffice.equalsIgnoreCase(city)) {
+            try {
+                return getRemoteServer(homeOffice).displayReservations(customerID);
+            } catch (Exception e) {
+                return "ERROR: UDP failed to " + homeOffice + " (" + e.getMessage() + ")";
+            }
+        }
+
+        String accessError = requireHomeCustomer(customerID);
+        if (accessError != null) return accessError;
+
+        StringBuilder result = new StringBuilder();
+        result.append(displayReservationsLocal(customerID));
+
+        for (String otherCity : Arrays.asList("MTL", "WPG", "BNF")) {
+            if (otherCity.equalsIgnoreCase(city)) {
+                continue;
+            }
+            try {
+                String reply = getRemoteServer(otherCity).displayReservationsLocal(customerID);
+                if (reply != null
+                        && !reply.trim().isEmpty()
+                        && !"No active reservations.".equals(reply.trim())) {
+                    result.append(reply);
+                    if (!reply.endsWith("\n")) {
+                        result.append('\n');
+                    }
+                }
+            } catch (Exception ignored) {
+                // Keep display methods best-effort across replica2 city servers.
+            }
+        }
+
+        String combined = result.toString().trim();
+        Logger.log(city, "displayReservations customer=" + customerID + " combinedLen=" + combined.length(), "customer");
+        return combined.isEmpty() ? "No active reservations." : (combined + "\n");
+    }
+
+    public String displayReservationsLocal(String customerID) {
+        return listReservationsLocal(customerID);
+    }
+
+    public String retryCustomerWaitlistsLocal(String customerID) {
+        retryWaitlistsLocal(customerID);
+        return "SUCCESS";
+    }
+
+    private void retryWaitlistsForCustomer(String customerID) {
+        retryWaitlistsLocal(customerID);
+        for (String otherCity : Arrays.asList("MTL", "WPG", "BNF")) {
+            if (otherCity.equalsIgnoreCase(city)) {
+                continue;
+            }
+            try {
+                getRemoteServer(otherCity).retryCustomerWaitlistsLocal(customerID);
+            } catch (Exception ignored) {
+                // Best-effort trigger only.
+            }
+        }
+    }
+
+    private void retryWaitlistsLocal(String customerID) {
+        List<String> vehicleIds = new ArrayList<>();
+        for (Map.Entry<String, Queue<Reservation>> entry : waitlists.entrySet()) {
+            for (Reservation reservation : entry.getValue()) {
+                if (reservation.customerID.equals(customerID)) {
+                    vehicleIds.add(entry.getKey());
+                    break;
+                }
+            }
+        }
+        for (String vehicleID : vehicleIds) {
+            promoteWaitlist(vehicleID);
+        }
+    }
+
+    private String listReservationsLocal(String customerID) {
+        StringBuilder result = new StringBuilder();
+        for (Map.Entry<String, List<Reservation>> entry : reservations.entrySet()) {
+            for (Reservation reservation : entry.getValue()) {
+                if (reservation.customerID.equals(customerID)) {
+                    result.append(reservation.vehicle.vehicleID)
+                            .append(" from ")
+                            .append(formatDate(reservation.start))
+                            .append(" to ")
+                            .append(formatDate(reservation.end))
+                            .append("\n");
+                }
+            }
+        }
+        return result.toString();
+    }
+
+    private String formatDate(String value) {
+        return LocalDate.parse(value).format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+    }
 	
     public String findLocalVehicle(String vtype) {
         StringBuilder result = new StringBuilder();
 
         vehicles.values().stream()
                 .filter(v -> v.vehicleType.equalsIgnoreCase(vtype))
-                .forEach(v -> result.append(v.vehicleID).append(" "));
+                .forEach(v -> result.append(v.vehicleID).append(" ")
+                        .append(v.vehicleType).append(" ")
+                        .append(reservedCountForToday(v.vehicleID) == 0 ? "Available" : "Reserved").append(" ")
+                        .append((int) v.price).append("\n"));
 
         return result.toString();
     }
@@ -586,10 +908,29 @@ public class VehicleServer extends DVRMSPOA {
                 it.remove();
                 reservations.computeIfAbsent(vID, k -> new CopyOnWriteArrayList<>()).add(next);
                 budgets.compute(next.customerID, (k, b) -> b - next.vehicle.price);
+                incrementReservationCount(next.customerID, city);
                 Logger.log(city, "Customer " + next.customerID + " promoted from waitlist for " + vID
                         + " from " + next.start + " to " + next.end, "customer");
+                break;
             }
         }
+    }
+
+    private int reservedCountForToday(String vID) {
+        LocalDate today = LocalDate.now();
+        int count = 0;
+        List<Reservation> list = reservations.get(vID);
+        if (list == null) {
+            return 0;
+        }
+        for (Reservation r : list) {
+            LocalDate start = LocalDate.parse(r.start);
+            LocalDate end = LocalDate.parse(r.end);
+            if (!(today.isBefore(start) || today.isAfter(end))) {
+                count++;
+            }
+        }
+        return count;
     }
     
     private boolean isAvailable(String vID, String s, String e) {
@@ -603,7 +944,9 @@ public class VehicleServer extends DVRMSPOA {
         for (Reservation r : list) {
             LocalDate start2 = LocalDate.parse(r.start);
             LocalDate end2 = LocalDate.parse(r.end);
-            if (start1.isBefore(end2) && start2.isBefore(end1)) {
+            // Use inclusive overlap semantics so a reservation that starts on
+            // the same day another reservation ends is still considered overlapping.
+            if (!(end1.isBefore(start2) || start1.isAfter(end2))) {
                 return false;
             }
         }
@@ -612,27 +955,67 @@ public class VehicleServer extends DVRMSPOA {
 
     // ================= CROSS SERVER =================
 
-    private String forwardReserve(String cID, String vID, String start, String end) {
+    private String forwardReserve(String targetCity, String cID, String vID, String start, String end) {
         try {
-            return getRemoteServer(city).reserveVehicle(cID, vID, start, end);
+            String reply = getRemoteServer(targetCity).reserveVehicle(cID, vID, start, end);
+            if (!reply.startsWith("SUCCESS|")) {
+                return reply;
+            }
+
+            double cost = Double.parseDouble(reply.split("\\|")[1]);
+            double currentBudget = budgets.getOrDefault(cID, 1000.0);
+            if (currentBudget < cost) {
+                getRemoteServer(targetCity).cancelReservation(cID, vID);
+                return "ERROR: Over budget (need " + (int) cost + ", have " + (int) currentBudget + ")";
+            }
+
+            budgets.put(cID, currentBudget - cost);
+            incrementReservationCount(cID, targetCity);
+            return "SUCCESS: reserved " + vID + " cost=" + (int) cost + " remainingBudget=" + (int) (currentBudget - cost);
         } catch (Exception e) {
-            return "Forward reserve failed";
+            return "ERROR: UDP failed to " + targetCity + " (" + e.getMessage() + ")";
         }
     }
     
-    private String forwardUpdate(String cID, String vID, String start, String end) {
+    private String forwardUpdate(String targetCity, String cID, String vID, String start, String end) {
         try {
-            return getRemoteServer(city).updateReservation(cID, vID, start, end);
+            String reply = getRemoteServer(targetCity).updateReservation(cID, vID, start, end);
+            if (reply.startsWith("SUCCESS|")) {
+                double cost = Double.parseDouble(reply.split("\\|")[1]);
+                double currentBudget = budgets.getOrDefault(cID, 1000.0);
+                if (currentBudget < cost) {
+                    getRemoteServer(targetCity).cancelReservation(cID, vID);
+                    return "ERROR: Over budget (need " + (int) cost + ", have " + (int) currentBudget + ")";
+                }
+
+                budgets.put(cID, currentBudget - cost);
+                incrementReservationCount(cID, targetCity);
+                return "SUCCESS: updated " + vID;
+            }
+            return reply;
         } catch (Exception e) {
-            return "Forward update failed";
+            return "ERROR: UDP failed to " + targetCity + " (" + e.getMessage() + ")";
         }
     }
 
-    private String forwardCancel(String cID, String vID) {
+    private String forwardCancel(String targetCity, String cID, String vID) {
         try {
-            return getRemoteServer(city).cancelReservation(cID, vID);
+            String reply = getRemoteServer(targetCity).cancelReservation(cID, vID);
+            if (!reply.startsWith("SUCCESS|")) {
+                return reply;
+            }
+
+            int refund = Integer.parseInt(reply.split("\\|")[1]);
+            if (refund > 0) {
+                budgets.compute(cID, (k, b) -> (b == null ? 1000.0 : b) + refund);
+                decrementReservationCount(cID, targetCity);
+                retryWaitlistsForCustomer(cID);
+            }
+            return refund > 0
+                    ? "SUCCESS: cancelled " + vID + " refund=" + refund
+                    : "SUCCESS: cancelled waitlist for " + vID;
         } catch (Exception e) {
-            return "Forward cancel failed";
+            return "ERROR: UDP failed to " + targetCity + " (" + e.getMessage() + ")";
         }
     }
 	

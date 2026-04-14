@@ -127,7 +127,8 @@ public class FrontEndCLI {
                         String reserveStart = scanner.nextLine().trim();
                         System.out.print("Enter end date (YYYY-MM-DD): ");
                         String reserveEnd = scanner.nextLine().trim();
-                        result = frontEnd.reserveVehicle(customerId, reserveVehicleId, reserveStart, reserveEnd);
+                        result = reserveWithWaitlistPrompt(
+                                scanner, frontEnd, customerId, reserveVehicleId, reserveStart, reserveEnd);
                         System.out.println(result);
                         break;
                     case "3":
@@ -137,7 +138,8 @@ public class FrontEndCLI {
                         String updateStart = scanner.nextLine().trim();
                         System.out.print("Enter new end date (YYYY-MM-DD): ");
                         String updateEnd = scanner.nextLine().trim();
-                        result = frontEnd.updateReservation(customerId, updateVehicleId, updateStart, updateEnd);
+                        result = updateWithWaitlistPrompt(
+                                scanner, frontEnd, customerId, updateVehicleId, updateStart, updateEnd);
                         System.out.println(result);
                         break;
                     case "4":
@@ -146,10 +148,10 @@ public class FrontEndCLI {
                         System.out.println(result);
                         break;
                     case "5":
-                        System.out.println("displayCurrentBudget is not exposed by the current FrontEnd IDL.");
+                        System.out.println(frontEnd.displayCurrentBudget(customerId));
                         break;
                     case "6":
-                        System.out.println("displayReservations is not exposed by the current FrontEnd IDL.");
+                        System.out.println(frontEnd.displayReservations(customerId));
                         break;
                     case "0":
                         return;
@@ -168,6 +170,56 @@ public class FrontEndCLI {
 
     private static boolean isValidCustomerId(String id) {
         return id.matches("(MTL|WPG|BNF)U\\d{4}");
+    }
+
+    private static String reserveWithWaitlistPrompt(Scanner scanner, FrontEnd frontEnd,
+                                                    String customerId, String vehicleId,
+                                                    String startDate, String endDate) {
+        String result = frontEnd.reserveVehicle(customerId, vehicleId, startDate, endDate);
+        if (!shouldOfferWaitlist(result)) {
+            return result;
+        }
+
+        if (!confirmWaitlist(scanner)) {
+            return result;
+        }
+
+        return frontEnd.reserveVehicle(customerId, vehicleId, startDate, endDate);
+    }
+
+    private static String updateWithWaitlistPrompt(Scanner scanner, FrontEnd frontEnd,
+                                                   String customerId, String vehicleId,
+                                                   String startDate, String endDate) {
+        String result = frontEnd.updateReservation(customerId, vehicleId, startDate, endDate);
+        if (!shouldOfferWaitlist(result)) {
+            return result;
+        }
+
+        if (!confirmWaitlist(scanner)) {
+            return result;
+        }
+
+        return frontEnd.updateReservation(customerId, vehicleId, startDate, endDate);
+    }
+
+    private static boolean shouldOfferWaitlist(String result) {
+        if (result == null) {
+            return false;
+        }
+
+        String normalized = result.trim().toUpperCase(Locale.ROOT);
+        if ("UNAVAILABLE".equals(normalized)) {
+            return true;
+        }
+
+        return result.startsWith("UNAVAILABLE:")
+                && result.toLowerCase(Locale.ROOT).contains("waitlist");
+    }
+
+    private static boolean confirmWaitlist(Scanner scanner) {
+        System.out.print("Vehicle is unavailable for that period. Join the waitlist? (y/n): ");
+        String answer = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
+        return answer.equals("y") || answer.equals("yes");
     }
 
     private static void printManagerMenu() {

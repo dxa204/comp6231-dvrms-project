@@ -1,0 +1,126 @@
+2026-04-13T17:46:06.615 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-13T17:46:06.617 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-13T17:46:06.617 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-13T17:46:06.623 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-13T17:53:31.340 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 14042026-16042026 cost=120
+2026-04-13T17:53:31.340 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-13T17:54:20.663 [MTL] [pool-1-thread-1] reserveVehicle UNAVAILABLE WPGU1234 MTL3012 16042026-18042026
+2026-04-13T17:58:28.930 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-13T17:58:28.933 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-13T17:58:28.933 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-13T17:58:28.940 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-13T18:02:39.942 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 14042026-16042026 cost=120
+2026-04-13T18:02:39.942 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-13T18:04:57.148 [MTL] [pool-1-thread-1] reserveVehicle UNAVAILABLE WPGU1234 MTL3012 16042026-18042026
+2026-04-13T18:12:39.095 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-13T18:12:39.097 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-13T18:12:39.097 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-13T18:12:39.103 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-13T18:13:48.644 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 14042026-16042026 cost=120
+2026-04-13T18:13:48.644 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-13T18:14:42.921 [MTL] [pool-1-thread-1] reserveVehicle UNAVAILABLE WPGU1234 MTL3012 16042026-18042026
+2026-04-13T18:17:48.028 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-13T18:17:48.030 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-13T18:17:48.030 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-13T18:17:48.035 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-13T18:18:49.029 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 14042026-16042026 cost=120
+2026-04-13T18:18:49.029 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-13T18:19:12.237 [MTL] [pool-1-thread-1] reserveVehicle UNAVAILABLE WPGU1234 MTL3012 16042026-18042026
+2026-04-13T18:19:16.479 [MTL] [pool-1-thread-1] reserveVehicle WAITLISTED WPGU1234 MTL3012 16042026-18042026
+2026-04-13T18:19:16.479 [MTL] [pool-1-thread-1] WAITLIST ENQUEUE customer=WPGU1234 vehicle=MTL3012 start=16042026 end=18042026 waitlistSizeNow=1
+2026-04-13T18:20:05.868 [MTL] [main] updateReservation OK MTLU1234 MTL3012 20042026-22042026
+2026-04-13T18:20:05.879 [MTL] [main] autoAssignWaitlist OK WPGU1234 MTL3012 2026-04-16-2026-04-18
+2026-04-13T18:20:42.348 [MTL] [pool-1-thread-1] updateReservation OK WPGU1234 MTL3012 24042026-26042026
+2026-04-13T18:35:11.297 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-13T18:35:11.299 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-13T18:35:11.299 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-13T18:35:11.304 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-13T18:36:14.352 [MTL] [pool-1-thread-1] reserveVehicle OK WPGU1234 MTL3012 14042026-16042026 cost=120
+2026-04-13T18:37:13.067 [MTL] [pool-1-thread-1] cancelReservation OK WPGU1234 MTL3012 refund=120
+2026-04-13T18:40:49.432 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-13T18:40:49.435 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-13T18:40:49.435 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-13T18:40:49.439 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-13T18:41:35.254 [MTL] [pool-1-thread-1] reserveVehicle OK WPGU1234 MTL3012 14042026-16042026 cost=120
+2026-04-13T18:47:58.667 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-13T18:47:58.669 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-13T18:47:58.669 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-13T18:47:58.674 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-13T18:48:50.325 [MTL] [pool-1-thread-1] reserveVehicle OK WPGU1234 MTL3012 14042026-16042026 cost=120
+2026-04-13T18:52:28.258 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-13T18:52:28.261 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-13T18:52:28.261 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-13T18:52:28.265 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-13T18:54:13.450 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 14042026-16042026 cost=120
+2026-04-13T18:54:13.450 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-13T18:56:13.471 [MTL] [pool-1-thread-1] reserveVehicle UNAVAILABLE WPGU1234 MTL3012 16042026-18042026
+2026-04-13T18:56:16.155 [MTL] [pool-1-thread-1] reserveVehicle WAITLISTED WPGU1234 MTL3012 16042026-18042026
+2026-04-13T18:56:16.155 [MTL] [pool-1-thread-1] WAITLIST ENQUEUE customer=WPGU1234 vehicle=MTL3012 start=16042026 end=18042026 waitlistSizeNow=1
+2026-04-13T18:59:22.720 [MTL] [main] updateReservation OK MTLU1234 MTL3012 22042026-24042026
+2026-04-13T18:59:22.730 [MTL] [main] autoAssignWaitlist REMOTE_DENIED WPGU1234 MTL3012 reply=ERROR: You can only reserve ONE vehicle outside your home office (WPG).
+2026-04-13T19:00:47.771 [MTL] [pool-1-thread-1] updateReservation WAITLIST->RESERVED WPGU1234 MTL3012 26042026-01052026 cost=120
+2026-04-13T19:01:11.873 [MTL] [pool-1-thread-1] cancelReservation OK WPGU1234 MTL3012 refund=120
+2026-04-14T10:58:43.649 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-14T10:58:43.652 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-14T10:58:43.652 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-14T10:58:43.656 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-14T11:03:10.761 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 18042026-20042026 cost=120
+2026-04-14T11:03:10.761 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-14T11:04:16.545 [MTL] [pool-1-thread-1] reserveVehicle UNAVAILABLE BNFU1234 MTL3012 20042026-22042026
+2026-04-14T11:04:18.306 [MTL] [pool-1-thread-1] reserveVehicle WAITLISTED BNFU1234 MTL3012 20042026-22042026
+2026-04-14T11:04:18.306 [MTL] [pool-1-thread-1] WAITLIST ENQUEUE customer=BNFU1234 vehicle=MTL3012 start=20042026 end=22042026 waitlistSizeNow=1
+2026-04-14T11:05:53.359 [MTL] [main] updateReservation OK MTLU1234 MTL3012 01052026-02052026
+2026-04-14T11:05:53.367 [MTL] [main] autoAssignWaitlist REMOTE_DENIED BNFU1234 MTL3012 reply=ERROR: You can only reserve ONE vehicle outside your home office (BNF).
+2026-04-14T11:07:00.109 [MTL] [pool-1-thread-1] updateReservation WAITLIST->RESERVED BNFU1234 MTL3012 03052026-10052026 cost=120
+2026-04-14T11:27:22.803 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-14T11:27:22.805 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-14T11:27:22.805 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-14T11:27:22.809 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-14T11:30:38.062 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 18042026-20042026 cost=120
+2026-04-14T11:30:38.062 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-14T11:31:12.321 [MTL] [main] reserveVehicle UNAVAILABLE MTLU2345 MTL3012 20042026-22042026
+2026-04-14T11:31:14.006 [MTL] [main] reserveVehicle WAITLISTED MTLU2345 MTL3012 20042026-22042026
+2026-04-14T11:31:14.006 [MTL] [main] WAITLIST ENQUEUE customer=MTLU2345 vehicle=MTL3012 start=20042026 end=22042026 waitlistSizeNow=1
+2026-04-14T11:31:58.591 [MTL] [main] REFUND LOCAL customer=MTLU1234 amount=120 fromOffice=MTL
+2026-04-14T11:31:58.592 [MTL] [main] NOTIFY customer=MTLU1234 msg=CANCELLED + REFUNDED: vehicle=MTL3012 refund=120 (removed by manager at MTL)
+2026-04-14T11:31:58.593 [MTL] [main] removeVehicle CANCELLED reservation customer=MTLU1234 vehicle=MTL3012 refund=120
+2026-04-14T11:31:58.593 [MTL] [main] removeVehicle OK manager=MTLM1234 vehicleID=MTL3012 cancelledReservations=1 clearedWaitlist=1 totalRefund=120
+2026-04-14T11:32:18.639 [MTL] [main] displayReservations customer=MTLU1234 combinedLen=0
+2026-04-14T11:32:23.538 [MTL] [main] displayCurrentBudget customer=MTLU1234 budget=1000
+2026-04-14T11:38:04.692 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-14T11:38:04.694 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-14T11:38:04.694 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-14T11:38:04.698 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-14T11:40:35.398 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 18042026-20042026 cost=120
+2026-04-14T11:40:35.398 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-14T11:41:10.960 [MTL] [main] reserveVehicle UNAVAILABLE MTLU2345 MTL3012 20042026-22042026
+2026-04-14T11:41:12.666 [MTL] [main] reserveVehicle WAITLISTED MTLU2345 MTL3012 20042026-22042026
+2026-04-14T11:41:12.667 [MTL] [main] WAITLIST ENQUEUE customer=MTLU2345 vehicle=MTL3012 start=20042026 end=22042026 waitlistSizeNow=1
+2026-04-14T11:41:31.133 [MTL] [main] REFUND LOCAL customer=MTLU1234 amount=120 fromOffice=MTL
+2026-04-14T11:41:31.134 [MTL] [main] NOTIFY customer=MTLU1234 msg=CANCELLED + REFUNDED: vehicle=MTL3012 refund=120 (removed by manager at MTL)
+2026-04-14T11:41:31.134 [MTL] [main] removeVehicle CANCELLED reservation customer=MTLU1234 vehicle=MTL3012 refund=120
+2026-04-14T11:41:31.134 [MTL] [main] removeVehicle OK manager=MTLM1234 vehicleID=MTL3012 cancelledReservations=1 clearedWaitlist=1 totalRefund=120
+2026-04-14T11:45:04.088 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-14T11:45:04.090 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-14T11:45:04.090 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-14T11:45:04.094 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-14T11:46:44.751 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 18042026-20042026 cost=120
+2026-04-14T11:46:44.751 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-14T11:46:54.580 [MTL] [main] REFUND LOCAL customer=MTLU1234 amount=120 fromOffice=MTL
+2026-04-14T11:46:54.580 [MTL] [main] NOTIFY customer=MTLU1234 msg=CANCELLED + REFUNDED: vehicle=MTL3012 refund=120 (removed by manager at MTL)
+2026-04-14T11:46:54.580 [MTL] [main] removeVehicle CANCELLED reservation customer=MTLU1234 vehicle=MTL3012 refund=120
+2026-04-14T11:46:54.581 [MTL] [main] removeVehicle OK manager=MTLM1234 vehicleID=MTL3012 cancelledReservations=1 clearedWaitlist=0 totalRefund=120
+2026-04-14T11:50:50.008 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-14T11:50:50.010 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-14T11:50:50.010 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-14T11:50:50.014 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-14T11:52:01.610 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3025 type=SUV price=200
+2026-04-14T11:52:01.612 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3012 type=Sedan price=120
+2026-04-14T11:52:01.613 [MTL] [main] addVehicle NEW manager=MTLM1111 vehicleID=MTL3077 type=Truck price=250
+2026-04-14T11:52:01.618 [MTL] [pool-1-thread-1] UDP listening on port 7201
+2026-04-14T11:54:01.041 [MTL] [main] reserveVehicle OK MTLU1234 MTL3012 18042026-20042026 cost=120
+2026-04-14T11:54:01.041 [MTL] [main] reserveVehicle LOCAL ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-14T11:54:45.266 [MTL] [main] REFUND LOCAL customer=MTLU1234 amount=120 fromOffice=MTL
+2026-04-14T11:54:45.267 [MTL] [main] NOTIFY customer=MTLU1234 msg=CANCELLED + REFUNDED: vehicle=MTL3012 refund=120 (removed by manager at MTL)
+2026-04-14T11:54:45.268 [MTL] [main] removeVehicle CANCELLED reservation customer=MTLU1234 vehicle=MTL3012 refund=120
+2026-04-14T11:54:45.268 [MTL] [main] removeVehicle OK manager=MTLM1234 vehicleID=MTL3012 cancelledReservations=1 clearedWaitlist=0 totalRefund=120

@@ -88,3 +88,63 @@ Apr 12, 2026 10:28:49 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
 INFO: Vehicle with BNF5204 added successfully by manager with BNFM1111
 Apr 12, 2026 10:28:49 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
 INFO: Vehicle with BNF5567 added successfully by manager with BNFM1111
+Apr 13, 2026 4:44:55 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with MTL3025 added successfully by manager with MTLM1111
+Apr 13, 2026 4:44:55 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with MTL3012 added successfully by manager with MTLM1111
+Apr 13, 2026 4:44:55 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with MTL3077 added successfully by manager with MTLM1111
+Apr 13, 2026 4:44:55 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with WPG4501 added successfully by manager with WPGM1111
+Apr 13, 2026 4:44:55 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with WPG4401 added successfully by manager with WPGM1111
+Apr 13, 2026 4:44:55 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with WPG4421 added successfully by manager with WPGM1111
+Apr 13, 2026 4:44:55 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with BNF5534 added successfully by manager with BNFM1111
+Apr 13, 2026 4:44:55 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with BNF5204 added successfully by manager with BNFM1111
+Apr 13, 2026 4:44:55 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with BNF5567 added successfully by manager with BNFM1111
+Apr 13, 2026 4:51:41 PM com.dvrms.replica1.RentalOfficeImpl reserveVehicle
+INFO: SUCCESS: Vehicle MTL3012 reserved. 
+
+Reservation details:
+---------------------
+Customer ID: MTLU1234
+Vehicle ID: MTL3012
+Pay Amount: $120.0
+Remaining budget: $880.0
+Apr 13, 2026 4:56:36 PM com.dvrms.replica1.RentalOfficeImpl reserveVehicle
+INFO: You already reserved this vehicle. Please update your existing reservation instead.
+Apr 13, 2026 5:01:58 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with MTL3025 added successfully by manager with MTLM1111
+Apr 13, 2026 5:01:58 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with MTL3012 added successfully by manager with MTLM1111
+Apr 13, 2026 5:01:58 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with MTL3077 added successfully by manager with MTLM1111
+Apr 13, 2026 5:01:58 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with WPG4501 added successfully by manager with WPGM1111
+Apr 13, 2026 5:01:58 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with WPG4401 added successfully by manager with WPGM1111
+Apr 13, 2026 5:01:58 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with WPG4421 added successfully by manager with WPGM1111
+Apr 13, 2026 5:01:58 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with BNF5534 added successfully by manager with BNFM1111
+Apr 13, 2026 5:01:58 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with BNF5204 added successfully by manager with BNFM1111
+Apr 13, 2026 5:01:58 PM com.dvrms.replica1.RentalOfficeImpl addVehicle
+INFO: Vehicle with BNF5567 added successfully by manager with BNFM1111
+Apr 13, 2026 5:04:05 PM com.dvrms.replica1.RentalOfficeImpl reserveVehicle
+INFO: SUCCESS: Vehicle MTL3012 reserved. 
+
+Reservation details:
+---------------------
+Customer ID: MTLU1234
+Vehicle ID: MTL3012
+Pay Amount: $120.0
+Remaining budget: $880.0
+Apr 13, 2026 5:07:57 PM com.dvrms.replica1.RentalOfficeImpl remoteReserveVehicle
+INFO: OVERLAPPED: Vehicle already reserved.
+Apr 13, 2026 5:07:57 PM com.dvrms.replica1.RentalOfficeImpl reserveVehicle
+INFO: OVERLAPPED: Vehicle already reserved.

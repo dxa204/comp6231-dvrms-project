@@ -72,6 +72,16 @@ public class FrontEndImpl extends FrontEndPOA {
     }
 
     @Override
+    public String displayCurrentBudget(String customerID) {
+        return processRequest("displayCurrentBudget", customerID);
+    }
+
+    @Override
+    public String displayReservations(String customerID) {
+        return processRequest("displayReservations", customerID);
+    }
+
+    @Override
     public String addToWaitingList(String customerID, String vehicleID, String startDate, String endDate) {
         return processRequest("addToWaitingList", customerID, vehicleID, startDate, endDate);
     }
@@ -238,16 +248,8 @@ public class FrontEndImpl extends FrontEndPOA {
     }
 
     private void notifyRM(String message) {
-
-        int[] rmPorts = {
-                Config.RM_1_PORT,
-                Config.RM_2_PORT,
-                Config.RM_3_PORT,
-                Config.RM_4_PORT
-        };
-
-        for (int port : rmPorts) {
-            UDPClient.send(message, Config.FE_HOST, port);
+        for (int rmId = 1; rmId <= 4; rmId++) {
+            UDPClient.send(message, Config.rmHost(rmId), Config.rmPort(rmId));
         }
     }
 }

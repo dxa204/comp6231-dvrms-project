@@ -208,15 +208,9 @@ public class Replica3Server {
 
     private void registerWithReplicaManagers() {
         String message = "REGISTER|" + REPLICA_ID_INT + "|ALL|" + LISTEN_PORT;
-        int[] rmPorts = {
-                Config.RM_1_PORT,
-                Config.RM_2_PORT,
-                Config.RM_3_PORT,
-                Config.RM_4_PORT
-        };
-
-        for (int rmPort : rmPorts) {
-            boolean acked = sendReliableToRM("localhost", rmPort, message);
+        for (int rmId = 1; rmId <= 4; rmId++) {
+            int rmPort = Config.rmPort(rmId);
+            boolean acked = sendReliableToRM(Config.rmHost(rmId), rmPort, message);
             System.out.println("[" + REPLICA_ID + "] REGISTER -> RM@" + rmPort + " "
                     + (acked ? "ACKed" : "no ACK after retries"));
         }

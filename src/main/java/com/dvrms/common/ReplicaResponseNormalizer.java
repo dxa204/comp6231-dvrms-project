@@ -21,6 +21,12 @@ public final class ReplicaResponseNormalizer {
         if ("findVehicle".equals(method)) {
             return normalizeVehicleListing(raw);
         }
+        if ("displayCurrentBudget".equals(method)) {
+            return normalizeBudget(raw);
+        }
+        if ("displayReservations".equals(method)) {
+            return normalizeReservations(raw);
+        }
         if ("addVehicle".equals(method)) {
             return normalizeStatus(raw, "SUCCESS", "added", "updated");
         }
@@ -62,16 +68,21 @@ public final class ReplicaResponseNormalizer {
 
     private static String normalizeReservation(String raw) {
         String lower = raw.toLowerCase();
-        if (lower.contains("waitlist")) {
+        if (lower.contains("only reserve one vehicle outside your home office")) {
+            return canonicalRemoteLimitMessage(raw);
+        }
+        if (lower.contains("waitlisted")) {
             return "WAITLISTED";
         }
-        if (lower.contains("budget")) {
+        if (lower.contains("insufficient budget")
+                || lower.contains("over budget")
+                || lower.startsWith("error: over budget")) {
             return "INSUFFICIENT_BUDGET";
         }
         if (lower.contains("reserved") || lower.contains("success")) {
             return "SUCCESS";
         }
-        if (lower.contains("unavailable")
+        if (lower.startsWith("unavailable")
                 || lower.contains("overlap")
                 || lower.contains("conflict")
                 || lower.contains("not available")
@@ -86,6 +97,15 @@ public final class ReplicaResponseNormalizer {
 
     private static String normalizeUpdate(String raw) {
         String lower = raw.toLowerCase();
+        if (lower.contains("no current reservation or waitlist for this vehicle")) {
+            return "ERROR: No current reservation or waitlist for this vehicle.";
+        }
+        if (lower.contains("vehicle not found")) {
+            return "ERROR: No current reservation or waitlist for this vehicle.";
+        }
+        if (lower.contains("only reserve one vehicle outside your home office")) {
+            return canonicalRemoteLimitMessage(raw);
+        }
         if (lower.contains("updated") || lower.contains("success")) {
             return "SUCCESS";
         }
@@ -114,6 +134,43 @@ public final class ReplicaResponseNormalizer {
         return "ERROR";
     }
 
+    private static String normalizeBudget(String raw) {
+        Matcher matcher = Pattern.compile("(\\d+)").matcher(raw);
+        if (matcher.find()) {
+            return "Current budget: " + matcher.group(1);
+        }
+        return raw;
+    }
+
+    private static String normalizeReservations(String raw) {
+        String trimmed = raw == null ? "" : raw.trim();
+        if (trimmed.isEmpty() || "No active reservations.".equalsIgnoreCase(trimmed)) {
+            return "No active reservations.";
+        }
+
+        String[] lines = trimmed.split("\\R+");
+        Set<String> normalized = new TreeSet<>();
+        for (String line : lines) {
+            String clean = line.trim().replaceAll("\\s+", " ");
+            if (!clean.isEmpty()) {
+                normalized.add(clean);
+            }
+        }
+
+        if (normalized.isEmpty()) {
+            return "No active reservations.";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (String line : normalized) {
+            if (builder.length() > 0) {
+                builder.append('\n');
+            }
+            builder.append(line);
+        }
+        return builder.toString();
+    }
+
     private static String normalizeStatus(String raw, String successValue, String... successTokens) {
         String lower = raw.toLowerCase();
         for (String token : successTokens) {
@@ -122,5 +179,13 @@ public final class ReplicaResponseNormalizer {
             }
         }
         return "ERROR";
+    }
+
+    private static String canonicalRemoteLimitMessage(String raw) {
+        Matcher matcher = Pattern.compile("\\(([A-Z]{3})\\)").matcher(raw);
+        if (matcher.find()) {
+            return "ERROR: You can only reserve ONE vehicle outside your home office (" + matcher.group(1) + ").";
+        }
+        return "ERROR: You can only reserve ONE vehicle outside your home office.";
     }
 }

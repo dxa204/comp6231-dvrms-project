@@ -166,6 +166,86 @@ public class _DVRMSStub extends org.omg.CORBA.portable.ObjectImpl implements DVR
             }
   } // findVehicle
 
+  public String displayCurrentBudget (String customerID)
+  {
+            org.omg.CORBA.portable.InputStream $in = null;
+            try {
+                org.omg.CORBA.portable.OutputStream $out = _request ("displayCurrentBudget", true);
+                $out.write_string (customerID);
+                $in = _invoke ($out);
+                String $result = $in.read_string ();
+                return $result;
+            } catch (org.omg.CORBA.portable.ApplicationException $ex) {
+                $in = $ex.getInputStream ();
+                String _id = $ex.getId ();
+                throw new org.omg.CORBA.MARSHAL (_id);
+            } catch (org.omg.CORBA.portable.RemarshalException $rm) {
+                return displayCurrentBudget (customerID        );
+            } finally {
+                _releaseReply ($in);
+            }
+  } // displayCurrentBudget
+
+  public String displayReservations (String customerID)
+  {
+            org.omg.CORBA.portable.InputStream $in = null;
+            try {
+                org.omg.CORBA.portable.OutputStream $out = _request ("displayReservations", true);
+                $out.write_string (customerID);
+                $in = _invoke ($out);
+                String $result = $in.read_string ();
+                return $result;
+            } catch (org.omg.CORBA.portable.ApplicationException $ex) {
+                $in = $ex.getInputStream ();
+                String _id = $ex.getId ();
+                throw new org.omg.CORBA.MARSHAL (_id);
+            } catch (org.omg.CORBA.portable.RemarshalException $rm) {
+                return displayReservations (customerID        );
+            } finally {
+                _releaseReply ($in);
+            }
+  } // displayReservations
+
+  public String displayReservationsLocal (String customerID)
+  {
+            org.omg.CORBA.portable.InputStream $in = null;
+            try {
+                org.omg.CORBA.portable.OutputStream $out = _request ("displayReservationsLocal", true);
+                $out.write_string (customerID);
+                $in = _invoke ($out);
+                String $result = $in.read_string ();
+                return $result;
+            } catch (org.omg.CORBA.portable.ApplicationException $ex) {
+                $in = $ex.getInputStream ();
+                String _id = $ex.getId ();
+                throw new org.omg.CORBA.MARSHAL (_id);
+            } catch (org.omg.CORBA.portable.RemarshalException $rm) {
+                return displayReservationsLocal (customerID        );
+            } finally {
+                _releaseReply ($in);
+            }
+  } // displayReservationsLocal
+
+  public String retryCustomerWaitlistsLocal (String customerID)
+  {
+            org.omg.CORBA.portable.InputStream $in = null;
+            try {
+                org.omg.CORBA.portable.OutputStream $out = _request ("retryCustomerWaitlistsLocal", true);
+                $out.write_string (customerID);
+                $in = _invoke ($out);
+                String $result = $in.read_string ();
+                return $result;
+            } catch (org.omg.CORBA.portable.ApplicationException $ex) {
+                $in = $ex.getInputStream ();
+                String _id = $ex.getId ();
+                throw new org.omg.CORBA.MARSHAL (_id);
+            } catch (org.omg.CORBA.portable.RemarshalException $rm) {
+                return retryCustomerWaitlistsLocal (customerID        );
+            } finally {
+                _releaseReply ($in);
+            }
+  } // retryCustomerWaitlistsLocal
+
   // Type-specific CORBA::Object operations
   private static String[] __ids = {
     "IDL:DVRMS/DVRMS:1.0"};

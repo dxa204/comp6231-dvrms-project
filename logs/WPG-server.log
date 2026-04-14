@@ -1,3 +1,42 @@
 2026-04-12T22:11:01.854 [WPG] [pool-2-thread-1] UDP error: Operation not permitted (Bind failed)
 2026-04-12T22:13:13.393 [WPG] [pool-2-thread-1] UDP listening on port 7402
 2026-04-12T22:28:49.397 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-13T16:44:55.449 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-13T17:01:58.358 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-13T17:46:06.628 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-13T17:58:28.948 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-13T18:12:39.105 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-13T18:17:48.035 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-13T18:20:05.877 [WPG] [pool-2-thread-1] WAITLIST_ASSIGN APPROVED customer=WPGU1234 fromOffice=MTL price=120 remainingBudget=880
+2026-04-13T18:20:05.879 [WPG] [pool-2-thread-1] NOTIFY customer=WPGU1234 msg=WAITLIST ASSIGNED: vehicle=MTL3012 from 16-04-2026 to 18-04-2026 cost=120
+2026-04-13T18:20:42.348 [WPG] [main] updateReservation REMOTE ok WPGU1234 MTL3012
+2026-04-13T18:26:03.354 [WPG] [main] findVehicle SUV
+2026-04-13T18:35:11.303 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-13T18:36:14.353 [WPG] [main] reserveVehicle REMOTE ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-13T18:37:13.068 [WPG] [main] cancelReservation REMOTE ok WPGU1234 MTL3012 refund=120
+2026-04-13T18:40:49.446 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-13T18:41:35.255 [WPG] [main] reserveVehicle REMOTE ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-13T18:47:58.670 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-13T18:48:50.325 [WPG] [main] reserveVehicle REMOTE ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-13T18:49:06.941 [WPG] [main] displayCurrentBudget customer=WPGU1234 budget=880
+2026-04-13T18:49:15.880 [WPG] [main] displayReservations customer=WPGU1234 combinedLen=37
+2026-04-13T18:52:28.276 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-13T18:56:32.739 [WPG] [main] displayReservations customer=WPGU1234 combinedLen=0
+2026-04-13T18:57:02.775 [WPG] [main] findVehicle SUV
+2026-04-13T18:57:30.271 [WPG] [main] reserveVehicle REMOTE ok vehicle=BNF5204 cost=150 remainingBudget=850
+2026-04-13T18:59:44.553 [WPG] [main] displayReservations customer=WPGU1234 combinedLen=37
+2026-04-13T19:00:47.771 [WPG] [main] updateReservation REMOTE waitlist->reserved WPGU1234 MTL3012 cost=120
+2026-04-13T19:01:11.874 [WPG] [main] cancelReservation REMOTE ok WPGU1234 MTL3012 refund=120
+2026-04-13T19:01:30.329 [WPG] [main] displayReservations customer=WPGU1234 combinedLen=37
+2026-04-13T19:01:47.603 [WPG] [main] cancelReservation REMOTE ok WPGU1234 BNF5204 refund=150
+2026-04-13T19:01:51.915 [WPG] [main] displayReservations customer=WPGU1234 combinedLen=0
+2026-04-14T10:58:43.655 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-14T11:05:18.540 [WPG] [pool-2-thread-1] reserveVehicle OK BNFU1234 WPG4421 01052026-02052026 cost=110
+2026-04-14T11:06:15.430 [WPG] [pool-2-thread-1] cancelReservation OK BNFU1234 WPG4421 refund=110
+2026-04-14T11:27:22.815 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-14T11:38:04.692 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-14T11:45:04.086 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-14T11:50:50.020 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-14T11:52:01.618 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-14T13:14:20.437 [WPG] [pool-2-thread-1] UDP listening on port 7402
+2026-04-14T13:31:47.251 [WPG] [pool-2-thread-1] UDP listening on port 7402

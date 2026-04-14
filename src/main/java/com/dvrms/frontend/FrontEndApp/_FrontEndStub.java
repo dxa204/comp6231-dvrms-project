@@ -216,6 +216,46 @@ public class _FrontEndStub extends org.omg.CORBA.portable.ObjectImpl implements 
             }
   } // findVehicle
 
+  public String displayCurrentBudget (String customerID)
+  {
+            org.omg.CORBA.portable.InputStream $in = null;
+            try {
+                org.omg.CORBA.portable.OutputStream $out = _request ("displayCurrentBudget", true);
+                $out.write_string (customerID);
+                $in = _invoke ($out);
+                String $result = $in.read_string ();
+                return $result;
+            } catch (org.omg.CORBA.portable.ApplicationException $ex) {
+                $in = $ex.getInputStream ();
+                String _id = $ex.getId ();
+                throw new org.omg.CORBA.MARSHAL (_id);
+            } catch (org.omg.CORBA.portable.RemarshalException $rm) {
+                return displayCurrentBudget (customerID        );
+            } finally {
+                _releaseReply ($in);
+            }
+  } // displayCurrentBudget
+
+  public String displayReservations (String customerID)
+  {
+            org.omg.CORBA.portable.InputStream $in = null;
+            try {
+                org.omg.CORBA.portable.OutputStream $out = _request ("displayReservations", true);
+                $out.write_string (customerID);
+                $in = _invoke ($out);
+                String $result = $in.read_string ();
+                return $result;
+            } catch (org.omg.CORBA.portable.ApplicationException $ex) {
+                $in = $ex.getInputStream ();
+                String _id = $ex.getId ();
+                throw new org.omg.CORBA.MARSHAL (_id);
+            } catch (org.omg.CORBA.portable.RemarshalException $rm) {
+                return displayReservations (customerID        );
+            } finally {
+                _releaseReply ($in);
+            }
+  } // displayReservations
+
   public String addToWaitingList (String customerID, String vehicleID, String startDate, String endDate)
   {
             org.omg.CORBA.portable.InputStream $in = null;

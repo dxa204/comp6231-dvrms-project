@@ -19,4 +19,8 @@ public interface DVRMSOperations
   String cancelReservation (String customerID, String vehicleID);
   String updateReservation (String customerID, String vehicleID, String newStartDate, String newEndDate);
   String findVehicle (String customerID, String vehicleType);
+  String displayCurrentBudget (String customerID);
+  String displayReservations (String customerID);
+  String displayReservationsLocal (String customerID);
+  String retryCustomerWaitlistsLocal (String customerID);
 } // interface DVRMSOperations

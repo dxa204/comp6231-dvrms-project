@@ -466,7 +466,7 @@ public class OfficeServer {
         try {
             VehicleRecord vehicle = vehicles.get(vehicleID);
             if (vehicle == null) {
-                return "ERROR: vehicle not found.";
+                return "ERROR: No current reservation or waitlist for this vehicle.";
             }
 
             if (!isAvailableForPeriod(vehicleID, start, end)) {
@@ -575,7 +575,30 @@ public class OfficeServer {
             ReservationRecord existing = reservationDB.get(key);
             if (existing != null) {
                 if (!isAvailableForPeriod(vehicleID, range.start, range.end, key)) {
-                    return "ERROR: Vehicle not available for updated period.";
+                    String waitlistKey = pendingKey(customerID, vehicleID, newStartDDMMYYYY, newEndDDMMYYYY);
+                    if (!pendingWaitlistConfirm.containsKey(waitlistKey)) {
+                        pendingWaitlistConfirm.put(waitlistKey, System.currentTimeMillis());
+                        log("updateReservation UNAVAILABLE " + customerID + " " + vehicleID + " "
+                                + newStartDDMMYYYY + "-" + newEndDDMMYYYY);
+                        return "UNAVAILABLE: Vehicle not available for updated period.";
+                    }
+
+                    pendingWaitlistConfirm.remove(waitlistKey);
+                    reservationDB.remove(key);
+
+                    int refund = existing.totalPrice;
+                    setBudget(customerID, getBudget(customerID) + refund);
+                    decrementReservationCount(customerID, office.name());
+
+                    vehicle.waitlist.addLast(new VehicleRecord.WaitlistEntry(customerID, range.start, range.end));
+
+                    log("updateReservation WAITLISTED " + customerID + " " + vehicleID + " "
+                            + newStartDDMMYYYY + "-" + newEndDDMMYYYY
+                            + " refund=" + refund
+                            + " waitlistSizeNow=" + vehicle.waitlist.size());
+
+                    autoAssignWaitlist(vehicleID);
+                    return "WAITLISTED: " + vehicleID + " for " + newStartDDMMYYYY + "-" + newEndDDMMYYYY;
                 }
 
                 reservationDB.put(key,
@@ -588,7 +611,7 @@ public class OfficeServer {
 
             VehicleRecord.WaitlistEntry entry = findWaitlistEntry(vehicle, customerID);
             if (entry == null) {
-                return "ERROR: reservation not found for this user and vehicle.";
+                return "ERROR: No current reservation or waitlist for this vehicle.";
             }
             if (!isAvailableForPeriod(vehicleID, range.start, range.end)) {
                 return "ERROR: Vehicle not available for updated period.";
@@ -639,6 +662,7 @@ public class OfficeServer {
             if (refund > 0) {
                 setBudget(customerID, getBudget(customerID) + refund);
                 decrementReservationCount(customerID, targetOffice);
+                retryWaitlistsForCustomer(customerID);
             }
 
             log("cancelReservation REMOTE ok " + customerID + " " + vehicleID + " refund=" + refund);
@@ -701,6 +725,7 @@ public class OfficeServer {
                 if (adjustBudgetAtHome) {
                     setBudget(customerID, getBudget(customerID) + refund);
                     decrementReservationCount(customerID, office.name());
+                    retryWaitlistsForCustomer(customerID);
                 }
 
                 log("cancelReservation OK " + customerID + " " + vehicleID + " refund=" + refund);
@@ -784,6 +809,30 @@ public class OfficeServer {
         while (tryAssignOneWaitlistedCustomer(vehicleID, vehicle)) {
             // keep scanning until no more assignments can be made
         }
+    }
+
+    private void retryWaitlistsForCustomer(String customerID) {
+        retryWaitlistsLocal(customerID);
+        for (Office other : Office.values()) {
+            if (other == office) continue;
+            udpRequest(other.name(), "RETRY_WAITLIST|" + customerID);
+        }
+    }
+
+    private String retryWaitlistsLocal(String customerID) {
+        List<String> vehicleIds = new ArrayList<>();
+        for (Map.Entry<String, VehicleRecord> entry : vehicles.entrySet()) {
+            for (VehicleRecord.WaitlistEntry waitlistEntry : entry.getValue().waitlist) {
+                if (waitlistEntry.customerID.equals(customerID)) {
+                    vehicleIds.add(entry.getKey());
+                    break;
+                }
+            }
+        }
+        for (String vehicleID : vehicleIds) {
+            autoAssignWaitlist(vehicleID);
+        }
+        return "SUCCESS";
     }
 
     private boolean tryAssignOneWaitlistedCustomer(String vehicleID, VehicleRecord vehicle) {
@@ -886,6 +935,8 @@ public class OfficeServer {
                 return cancelLocal(parts[1], parts[2], false);
             case "REFUND":
                 return applyRefund(parts[1], Integer.parseInt(parts[2]), parts[3]);
+            case "RETRY_WAITLIST":
+                return retryWaitlistsLocal(parts[1]);
             case "LISTRES":
                 return listReservationsLocal(parts[1]);
             case "NOTIFY":
@@ -901,6 +952,7 @@ public class OfficeServer {
     private String applyRefund(String customerID, int amount, String fromOffice) {
         setBudget(customerID, getBudget(customerID) + amount);
         decrementReservationCount(customerID, fromOffice);
+        retryWaitlistsForCustomer(customerID);
         log("REFUND APPLIED customer=" + customerID + " amount=" + amount + " fromOffice=" + fromOffice);
         return "SUCCESS";
     }

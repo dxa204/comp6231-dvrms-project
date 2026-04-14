@@ -22,6 +22,10 @@ public abstract class DVRMSPOA extends org.omg.PortableServer.Servant
     _methods.put ("cancelReservation", new java.lang.Integer (4));
     _methods.put ("updateReservation", new java.lang.Integer (5));
     _methods.put ("findVehicle", new java.lang.Integer (6));
+    _methods.put ("displayCurrentBudget", new java.lang.Integer (7));
+    _methods.put ("displayReservations", new java.lang.Integer (8));
+    _methods.put ("displayReservationsLocal", new java.lang.Integer (9));
+    _methods.put ("retryCustomerWaitlistsLocal", new java.lang.Integer (10));
   }
 
   public org.omg.CORBA.portable.OutputStream _invoke (String $method,
@@ -117,6 +121,46 @@ public abstract class DVRMSPOA extends org.omg.PortableServer.Servant
          String vehicleType = in.read_string ();
          String $result = null;
          $result = this.findVehicle (customerID, vehicleType);
+         out = $rh.createReply();
+         out.write_string ($result);
+         break;
+       }
+
+       case 7:  // DVRMS/DVRMS/displayCurrentBudget
+       {
+         String customerID = in.read_string ();
+         String $result = null;
+         $result = this.displayCurrentBudget (customerID);
+         out = $rh.createReply();
+         out.write_string ($result);
+         break;
+       }
+
+       case 8:  // DVRMS/DVRMS/displayReservations
+       {
+         String customerID = in.read_string ();
+         String $result = null;
+         $result = this.displayReservations (customerID);
+         out = $rh.createReply();
+         out.write_string ($result);
+         break;
+       }
+
+       case 9:  // DVRMS/DVRMS/displayReservationsLocal
+       {
+         String customerID = in.read_string ();
+         String $result = null;
+         $result = this.displayReservationsLocal (customerID);
+         out = $rh.createReply();
+         out.write_string ($result);
+         break;
+       }
+
+       case 10:  // DVRMS/DVRMS/retryCustomerWaitlistsLocal
+       {
+         String customerID = in.read_string ();
+         String $result = null;
+         $result = this.retryCustomerWaitlistsLocal (customerID);
          out = $rh.createReply();
          out.write_string ($result);
          break;

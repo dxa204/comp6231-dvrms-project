@@ -1,0 +1,64 @@
+2026-04-13T17:46:06.618 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-13T17:46:06.618 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-13T17:46:06.619 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-13T17:46:06.622 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-13T17:58:28.934 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-13T17:58:28.934 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-13T17:58:28.934 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-13T17:58:28.937 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-13T18:12:39.097 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-13T18:12:39.098 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-13T18:12:39.098 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-13T18:12:39.102 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-13T18:17:48.030 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-13T18:17:48.030 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-13T18:17:48.030 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-13T18:17:48.036 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-13T18:35:11.300 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-13T18:35:11.300 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-13T18:35:11.300 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-13T18:35:11.304 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-13T18:40:49.436 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-13T18:40:49.436 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-13T18:40:49.436 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-13T18:40:49.440 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-13T18:47:58.670 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-13T18:47:58.670 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-13T18:47:58.670 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-13T18:47:58.674 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-13T18:52:28.261 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-13T18:52:28.261 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-13T18:52:28.261 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-13T18:52:28.265 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-13T18:57:30.270 [BNF] [pool-3-thread-1] reserveVehicle OK WPGU1234 BNF5204 18042026-20042026 cost=150
+2026-04-13T19:01:47.602 [BNF] [pool-3-thread-1] cancelReservation OK WPGU1234 BNF5204 refund=150
+2026-04-14T10:58:43.652 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-14T10:58:43.652 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-14T10:58:43.652 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-14T10:58:43.655 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-14T11:05:18.541 [BNF] [main] reserveVehicle REMOTE ok vehicle=WPG4421 cost=110 remainingBudget=890
+2026-04-14T11:06:02.648 [BNF] [main] displayReservations customer=BNFU1234 combinedLen=37
+2026-04-14T11:06:15.430 [BNF] [main] cancelReservation REMOTE ok BNFU1234 WPG4421 refund=110
+2026-04-14T11:06:20.001 [BNF] [main] displayReservations customer=BNFU1234 combinedLen=0
+2026-04-14T11:07:00.109 [BNF] [main] updateReservation REMOTE waitlist->reserved BNFU1234 MTL3012 cost=120
+2026-04-14T11:07:04.742 [BNF] [main] displayReservations customer=BNFU1234 combinedLen=37
+2026-04-14T11:27:22.806 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-14T11:27:22.806 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-14T11:27:22.806 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-14T11:27:22.810 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-14T11:38:04.694 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-14T11:38:04.695 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-14T11:38:04.695 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-14T11:38:04.698 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-14T11:45:04.091 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-14T11:45:04.091 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-14T11:45:04.091 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-14T11:45:04.094 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-14T11:50:50.011 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-14T11:50:50.011 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-14T11:50:50.011 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-14T11:50:50.015 [BNF] [pool-3-thread-1] UDP listening on port 7203
+2026-04-14T11:52:01.613 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5534 type=Sedan price=130
+2026-04-14T11:52:01.613 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5204 type=SUV price=150
+2026-04-14T11:52:01.613 [BNF] [main] addVehicle NEW manager=BNFM1111 vehicleID=BNF5567 type=Truck price=450
+2026-04-14T11:52:01.618 [BNF] [pool-3-thread-1] UDP listening on port 7203

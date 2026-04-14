@@ -14,11 +14,6 @@ public class RMNotifier {
 
     private static final Logger LOG = Logger.getLogger(RMNotifier.class.getName());
 
-    private final int[] rmPorts = {
-            Config.RM_1_PORT, Config.RM_2_PORT,
-            Config.RM_3_PORT, Config.RM_4_PORT
-    };
-
     private final DatagramSocket socket;
 
     public RMNotifier(DatagramSocket socket) {
@@ -33,14 +28,15 @@ public class RMNotifier {
         String message = Config.MSG_CRASH_SUSPECT + Config.DELIMITER + replicaId;
         byte[] data = message.getBytes();
 
-        for (int rmPort : rmPorts) {
+        for (int rmId = 1; rmId <= 4; rmId++) {
             try {
-                InetAddress addr = InetAddress.getByName("localhost"); // adjust for LAN
+                int rmPort = Config.rmPort(rmId);
+                InetAddress addr = InetAddress.getByName(Config.rmHost(rmId));
                 DatagramPacket packet = new DatagramPacket(data, data.length, addr, rmPort);
                 socket.send(packet);
                 LOG.info("[Sequencer] Reported unreachable replica " + replicaId + " to RM on port " + rmPort);
             } catch (IOException e) {
-                LOG.severe("[Sequencer] Failed to notify RM on port " + rmPort + ": " + e.getMessage());
+                LOG.severe("[Sequencer] Failed to notify RM " + rmId + ": " + e.getMessage());
             }
         }
     }

@@ -1,3 +1,27 @@
 2026-04-12T22:11:01.845 [BNF] [pool-3-thread-1] UDP error: Operation not permitted (Bind failed)
 2026-04-12T22:13:13.412 [BNF] [pool-3-thread-1] UDP listening on port 7103
 2026-04-12T22:28:49.411 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-13T16:44:55.459 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-13T17:01:58.364 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-13T17:46:06.619 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-13T17:58:28.939 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-13T18:12:39.097 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-13T18:17:48.041 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-13T18:35:11.305 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-13T18:40:49.450 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-13T18:47:58.668 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-13T18:52:28.277 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-13T18:57:30.270 [BNF] [pool-3-thread-1] reserveVehicle OK WPGU1234 BNF5204 18042026-20042026 cost=150
+2026-04-13T19:01:47.602 [BNF] [pool-3-thread-1] cancelReservation OK WPGU1234 BNF5204 refund=150
+2026-04-14T10:58:43.647 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-14T11:05:18.541 [BNF] [main] reserveVehicle REMOTE ok vehicle=WPG4421 cost=110 remainingBudget=890
+2026-04-14T11:06:02.647 [BNF] [main] displayReservations customer=BNFU1234 combinedLen=37
+2026-04-14T11:06:15.431 [BNF] [main] cancelReservation REMOTE ok BNFU1234 WPG4421 refund=110
+2026-04-14T11:06:20.001 [BNF] [main] displayReservations customer=BNFU1234 combinedLen=0
+2026-04-14T11:07:00.109 [BNF] [main] updateReservation REMOTE waitlist->reserved BNFU1234 MTL3012 cost=120
+2026-04-14T11:07:04.742 [BNF] [main] displayReservations customer=BNFU1234 combinedLen=37
+2026-04-14T11:27:22.812 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-14T11:38:04.700 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-14T11:45:04.084 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-14T11:50:50.025 [BNF] [pool-3-thread-1] UDP listening on port 7103
+2026-04-14T11:52:01.617 [BNF] [pool-3-thread-1] UDP listening on port 7103

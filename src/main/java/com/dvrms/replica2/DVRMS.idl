@@ -54,6 +54,22 @@ module DVRMS {
             in string vehicleType
         );
 
+        string displayCurrentBudget(
+            in string customerID
+        );
+
+        string displayReservations(
+            in string customerID
+        );
+
+        string displayReservationsLocal(
+            in string customerID
+        );
+
+        string retryCustomerWaitlistsLocal(
+            in string customerID
+        );
+
         string findLocalVehicle(
             in string vtype
         );

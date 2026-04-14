@@ -26,7 +26,7 @@ public class Replica1Server {
     private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
     private static final DateTimeFormatter DMY_DATE = DateTimeFormatter.ofPattern("ddMMyyyy");
 
-    private final Map<String, RentalOfficeImpl> offices = new ConcurrentHashMap<>();
+    private final Map<String, OfficeServer> offices = new ConcurrentHashMap<>();
     private final Map<Integer, RequestEnvelope> pending = new TreeMap<>();
     private final Map<Integer, String> executed = new ConcurrentHashMap<>();
 
@@ -37,7 +37,6 @@ public class Replica1Server {
     }
 
     public void start() throws Exception {
-        configureReplicaPorts();
         createOffices();
         seedInitialData();
         startOfficeUdpListeners();
@@ -49,30 +48,16 @@ public class Replica1Server {
         }
     }
 
-    private void configureReplicaPorts() {
-        System.setProperty("dvrms.replica1.port.MTL", "7201");
-        System.setProperty("dvrms.replica1.port.WPG", "7202");
-        System.setProperty("dvrms.replica1.port.BNF", "7203");
-    }
-
-    private void createOffices() throws IOException {
-        offices.put("MTL", new RentalOfficeImpl("MTL"));
-        offices.put("WPG", new RentalOfficeImpl("WPG"));
-        offices.put("BNF", new RentalOfficeImpl("BNF"));
+    private void createOffices() {
+        offices.put("MTL", new OfficeServer(OfficeServer.Office.MTL, 7201));
+        offices.put("WPG", new OfficeServer(OfficeServer.Office.WPG, 7202));
+        offices.put("BNF", new OfficeServer(OfficeServer.Office.BNF, 7203));
     }
 
     private void startOfficeUdpListeners() {
-        startOfficeUdpListener("MTL", 7201);
-        startOfficeUdpListener("WPG", 7202);
-        startOfficeUdpListener("BNF", 7203);
-    }
-
-    private void startOfficeUdpListener(String officeCode, int port) {
-        Thread thread = new Thread(
-                new RentalOfficeUDPServer(officeCode, port, offices.get(officeCode)),
-                "replica1-" + officeCode.toLowerCase() + "-udp");
-        thread.setDaemon(true);
-        thread.start();
+        for (OfficeServer office : offices.values()) {
+            office.startUdpListener();
+        }
     }
 
     private void seedInitialData() {
@@ -83,10 +68,10 @@ public class Replica1Server {
     }
 
     private void seedOffice(String officeCode, Map<String, VehicleRecord> data) {
-        RentalOfficeImpl office = offices.get(officeCode);
+        OfficeServer office = offices.get(officeCode);
         String managerId = officeCode + "M1111";
         for (VehicleRecord record : data.values()) {
-            office.addVehicle(managerId, record.vehicleID, record.vehicleType, record.vehicleID, record.reservationPrice);
+            office.addVehicle(managerId, record.vehicleNumber, record.vehicleType, record.vehicleID, record.reservationPrice);
         }
     }
 
@@ -156,6 +141,9 @@ public class Replica1Server {
 
     private void terminateReplica(String message) {
         System.out.println("[" + REPLICA_ID + "] received " + message + " from RM - shutting down");
+        for (OfficeServer office : offices.values()) {
+            office.shutdown();
+        }
         System.exit(0);
     }
 
@@ -164,12 +152,12 @@ public class Replica1Server {
             switch (envelope.method) {
                 case "addVehicle":
                     return officeForManager(envelope.args[0]).addVehicle(
-                            envelope.args[0], envelope.args[1], envelope.args[2], envelope.args[3], Double.parseDouble(envelope.args[4]));
+                            envelope.args[0], Integer.parseInt(envelope.args[1]), envelope.args[2], envelope.args[3], Integer.parseInt(envelope.args[4]));
                 case "removeVehicle":
                     return officeForManager(envelope.args[0]).removeVehicle(envelope.args[0], envelope.args[1]);
                 case "listAvailableVehicle":
                 case "listAvailableVehicles":
-                    return officeForManager(envelope.args[0]).listAvailableVehicles(envelope.args[0]);
+                    return officeForManager(envelope.args[0]).listAvailableVehicle(envelope.args[0]);
                 case "reserveVehicle":
                     return officeForCustomer(envelope.args[0]).reserveVehicle(
                             envelope.args[0], envelope.args[1], toDdMmYyyy(envelope.args[2]), toDdMmYyyy(envelope.args[3]));
@@ -180,6 +168,12 @@ public class Replica1Server {
                             envelope.args[0], envelope.args[1], toDdMmYyyy(envelope.args[2]), toDdMmYyyy(envelope.args[3]));
                 case "findVehicle":
                     return officeForCustomer(envelope.args[0]).findVehicle(envelope.args[0], envelope.args[1]);
+                case "displayCurrentBudget":
+                    return officeForCustomer(envelope.args[0]).displayCurrentBudget(envelope.args[0]);
+                case "displayReservations":
+                    return officeForCustomer(envelope.args[0]).displayReservations(envelope.args[0]);
+                case "displayNotifications":
+                    return officeForCustomer(envelope.args[0]).displayNotifications(envelope.args[0]);
                 default:
                     return "Unsupported operation in replica1 backend: " + envelope.method;
             }
@@ -188,16 +182,16 @@ public class Replica1Server {
         }
     }
 
-    private RentalOfficeImpl officeForManager(String managerId) {
+    private OfficeServer officeForManager(String managerId) {
         return officeByCode(managerId.substring(0, 3));
     }
 
-    private RentalOfficeImpl officeForCustomer(String customerId) {
+    private OfficeServer officeForCustomer(String customerId) {
         return officeByCode(customerId.substring(0, 3));
     }
 
-    private RentalOfficeImpl officeByCode(String officeCode) {
-        RentalOfficeImpl office = offices.get(officeCode);
+    private OfficeServer officeByCode(String officeCode) {
+        OfficeServer office = offices.get(officeCode);
         if (office == null) {
             throw new IllegalArgumentException("Unknown office " + officeCode);
         }
@@ -213,15 +207,9 @@ public class Replica1Server {
 
     private void registerWithReplicaManagers() {
         String message = "REGISTER|" + REPLICA_ID_INT + "|ALL|" + LISTEN_PORT;
-        int[] rmPorts = {
-                Config.RM_1_PORT,
-                Config.RM_2_PORT,
-                Config.RM_3_PORT,
-                Config.RM_4_PORT
-        };
-
-        for (int rmPort : rmPorts) {
-            boolean acked = sendReliableToRM("localhost", rmPort, message);
+        for (int rmId = 1; rmId <= 4; rmId++) {
+            int rmPort = Config.rmPort(rmId);
+            boolean acked = sendReliableToRM(Config.rmHost(rmId), rmPort, message);
             System.out.println("[" + REPLICA_ID + "] REGISTER -> RM@" + rmPort + " "
                     + (acked ? "ACKed" : "no ACK after retries"));
         }

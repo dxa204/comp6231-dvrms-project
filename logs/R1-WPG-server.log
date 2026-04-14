@@ -1,0 +1,77 @@
+2026-04-13T17:46:06.617 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-13T17:46:06.618 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-13T17:46:06.618 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-13T17:46:06.622 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-13T17:58:28.933 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-13T17:58:28.933 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-13T17:58:28.934 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-13T17:58:28.937 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-13T18:12:39.097 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-13T18:12:39.097 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-13T18:12:39.097 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-13T18:12:39.103 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-13T18:17:48.030 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-13T18:17:48.030 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-13T18:17:48.030 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-13T18:17:48.035 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-13T18:20:05.877 [WPG] [pool-2-thread-1] WAITLIST_ASSIGN APPROVED customer=WPGU1234 fromOffice=MTL price=120 remainingBudget=880
+2026-04-13T18:20:05.878 [WPG] [pool-2-thread-1] NOTIFY customer=WPGU1234 msg=WAITLIST ASSIGNED: vehicle=MTL3012 from 16-04-2026 to 18-04-2026 cost=120
+2026-04-13T18:20:42.348 [WPG] [main] updateReservation REMOTE ok WPGU1234 MTL3012
+2026-04-13T18:26:03.354 [WPG] [main] findVehicle SUV
+2026-04-13T18:35:11.299 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-13T18:35:11.300 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-13T18:35:11.300 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-13T18:35:11.304 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-13T18:36:14.353 [WPG] [main] reserveVehicle REMOTE ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-13T18:37:13.067 [WPG] [main] cancelReservation REMOTE ok WPGU1234 MTL3012 refund=120
+2026-04-13T18:40:49.436 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-13T18:40:49.436 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-13T18:40:49.436 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-13T18:40:49.440 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-13T18:41:35.255 [WPG] [main] reserveVehicle REMOTE ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-13T18:47:58.669 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-13T18:47:58.670 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-13T18:47:58.670 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-13T18:47:58.675 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-13T18:48:50.326 [WPG] [main] reserveVehicle REMOTE ok vehicle=MTL3012 cost=120 remainingBudget=880
+2026-04-13T18:49:06.941 [WPG] [main] displayCurrentBudget customer=WPGU1234 budget=880
+2026-04-13T18:49:15.880 [WPG] [main] displayReservations customer=WPGU1234 combinedLen=37
+2026-04-13T18:52:28.261 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-13T18:52:28.261 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-13T18:52:28.261 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-13T18:52:28.265 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-13T18:56:32.738 [WPG] [main] displayReservations customer=WPGU1234 combinedLen=0
+2026-04-13T18:57:02.775 [WPG] [main] findVehicle SUV
+2026-04-13T18:57:30.271 [WPG] [main] reserveVehicle REMOTE ok vehicle=BNF5204 cost=150 remainingBudget=850
+2026-04-13T18:59:44.553 [WPG] [main] displayReservations customer=WPGU1234 combinedLen=37
+2026-04-13T19:00:47.771 [WPG] [main] updateReservation REMOTE waitlist->reserved WPGU1234 MTL3012 cost=120
+2026-04-13T19:01:11.874 [WPG] [main] cancelReservation REMOTE ok WPGU1234 MTL3012 refund=120
+2026-04-13T19:01:30.329 [WPG] [main] displayReservations customer=WPGU1234 combinedLen=37
+2026-04-13T19:01:47.604 [WPG] [main] cancelReservation REMOTE ok WPGU1234 BNF5204 refund=150
+2026-04-13T19:01:51.915 [WPG] [main] displayReservations customer=WPGU1234 combinedLen=0
+2026-04-14T10:58:43.652 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-14T10:58:43.652 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-14T10:58:43.652 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-14T10:58:43.656 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-14T11:05:18.540 [WPG] [pool-2-thread-1] reserveVehicle OK BNFU1234 WPG4421 01052026-02052026 cost=110
+2026-04-14T11:06:15.430 [WPG] [pool-2-thread-1] cancelReservation OK BNFU1234 WPG4421 refund=110
+2026-04-14T11:27:22.805 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-14T11:27:22.805 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-14T11:27:22.806 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-14T11:27:22.809 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-14T11:38:04.694 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-14T11:38:04.694 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-14T11:38:04.694 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-14T11:38:04.700 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-14T11:45:04.091 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-14T11:45:04.091 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-14T11:45:04.091 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-14T11:45:04.094 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-14T11:50:50.010 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-14T11:50:50.011 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-14T11:50:50.011 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-14T11:50:50.015 [WPG] [pool-2-thread-1] UDP listening on port 7202
+2026-04-14T11:52:01.613 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4501 type=Truck price=300
+2026-04-14T11:52:01.613 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4401 type=SUV price=210
+2026-04-14T11:52:01.613 [WPG] [main] addVehicle NEW manager=WPGM1111 vehicleID=WPG4421 type=Sedan price=110
+2026-04-14T11:52:01.619 [WPG] [pool-2-thread-1] UDP listening on port 7202

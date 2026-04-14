@@ -89,6 +89,14 @@ module FrontEndApp
             in string vehicleType
         );
 
+        string displayCurrentBudget(
+            in string customerID
+        );
+
+        string displayReservations(
+            in string customerID
+        );
+
         string addToWaitingList(
             in string customerID,
             in string vehicleID,

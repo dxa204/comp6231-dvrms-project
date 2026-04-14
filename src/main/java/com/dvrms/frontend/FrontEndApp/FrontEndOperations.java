@@ -25,6 +25,8 @@ public interface FrontEndOperations
   String remoteCancelReservation (String customerID, String vehicleID, double budgetAmount);
   String updateReservation (String customerID, String vehicleID, String newStartDate, String newEndDate);
   String findVehicle (String customerID, String vehicleType);
+  String displayCurrentBudget (String customerID);
+  String displayReservations (String customerID);
   String addToWaitingList (String customerID, String vehicleID, String startDate, String endDate);
   String getLocalVehiclesByType (String vehicleType);
 } // interface FrontEndOperations

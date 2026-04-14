@@ -28,8 +28,10 @@ public abstract class FrontEndPOA extends org.omg.PortableServer.Servant
     _methods.put ("remoteCancelReservation", new java.lang.Integer (6));
     _methods.put ("updateReservation", new java.lang.Integer (7));
     _methods.put ("findVehicle", new java.lang.Integer (8));
-    _methods.put ("addToWaitingList", new java.lang.Integer (9));
-    _methods.put ("getLocalVehiclesByType", new java.lang.Integer (10));
+    _methods.put ("displayCurrentBudget", new java.lang.Integer (9));
+    _methods.put ("displayReservations", new java.lang.Integer (10));
+    _methods.put ("addToWaitingList", new java.lang.Integer (11));
+    _methods.put ("getLocalVehiclesByType", new java.lang.Integer (12));
   }
 
   public org.omg.CORBA.portable.OutputStream _invoke (String $method,
@@ -156,7 +158,27 @@ public abstract class FrontEndPOA extends org.omg.PortableServer.Servant
          break;
        }
 
-       case 9:  // FrontEndApp/FrontEnd/addToWaitingList
+       case 9:  // FrontEndApp/FrontEnd/displayCurrentBudget
+       {
+         String customerID = in.read_string ();
+         String $result = null;
+         $result = this.displayCurrentBudget (customerID);
+         out = $rh.createReply();
+         out.write_string ($result);
+         break;
+       }
+
+       case 10:  // FrontEndApp/FrontEnd/displayReservations
+       {
+         String customerID = in.read_string ();
+         String $result = null;
+         $result = this.displayReservations (customerID);
+         out = $rh.createReply();
+         out.write_string ($result);
+         break;
+       }
+
+       case 11:  // FrontEndApp/FrontEnd/addToWaitingList
        {
          String customerID = in.read_string ();
          String vehicleID = in.read_string ();
@@ -169,7 +191,7 @@ public abstract class FrontEndPOA extends org.omg.PortableServer.Servant
          break;
        }
 
-       case 10:  // FrontEndApp/FrontEnd/getLocalVehiclesByType
+       case 12:  // FrontEndApp/FrontEnd/getLocalVehiclesByType
        {
          String vehicleType = in.read_string ();
          String $result = null;

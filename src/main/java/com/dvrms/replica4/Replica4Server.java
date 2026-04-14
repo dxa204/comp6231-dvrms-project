@@ -122,7 +122,12 @@ public class Replica4Server {
         while (buffer.containsKey(nextExpectedSeq)) {
             RequestEnvelope env = buffer.remove(nextExpectedSeq);
 
-            String result = dispatch(env);
+            String result;
+            try {
+                result = dispatch(env);
+            } catch (RuntimeException e) {
+                result = "ERROR: " + e.getMessage();
+            }
             executedResults.put(nextExpectedSeq, result);
 
             String response = "RESULT|" + env.msgId + "|R4|"
@@ -200,15 +205,9 @@ public class Replica4Server {
 
     private void registerWithReplicaManagers() {
         String message = "REGISTER|" + REPLICA_ID_INT + "|ALL|" + REPLICA_PORT;
-        int[] rmPorts = {
-                Config.RM_1_PORT,
-                Config.RM_2_PORT,
-                Config.RM_3_PORT,
-                Config.RM_4_PORT
-        };
-
-        for (int port : rmPorts) {
-            boolean acked = sendReliableToRM("localhost", port, message);
+        for (int rmId = 1; rmId <= 4; rmId++) {
+            int port = Config.rmPort(rmId);
+            boolean acked = sendReliableToRM(Config.rmHost(rmId), port, message);
             System.out.println("[" + REPLICA_ID + "] REGISTER -> RM@" + port
                     + " " + (acked ? "ACKed" : "no ACK after retries"));
         }

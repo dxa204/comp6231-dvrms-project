@@ -62,10 +62,10 @@ public class Sequencer {
      * In production, the RM would send these at startup.
      */
     private void initializeReplicaTargets() {
-        addReplica("R1", "localhost", Config.REPLICA_1_PORT);
-        addReplica("R2", "localhost", Config.REPLICA_2_PORT);
-        addReplica("R3", "localhost", Config.REPLICA_3_PORT);
-        addReplica("R4", "localhost", Config.REPLICA_4_PORT);
+        addReplica("R1", Config.REPLICA_1_HOST, Config.REPLICA_1_PORT);
+        addReplica("R2", Config.REPLICA_2_HOST, Config.REPLICA_2_PORT);
+        addReplica("R3", Config.REPLICA_3_HOST, Config.REPLICA_3_PORT);
+        addReplica("R4", Config.REPLICA_4_HOST, Config.REPLICA_4_PORT);
     }
 
     private void addReplica(String id, String host, int port) {
@@ -212,7 +212,7 @@ public class Sequencer {
             return;
         }
 
-        String oldReplicaId = parts[1];
+        String oldReplicaId = canonicalReplicaId(parts[1]);
         String newHost = parts[2];
         int newPort = Integer.parseInt(parts[3]);
 
@@ -225,6 +225,21 @@ public class Sequencer {
         } else {
             LOG.warning("[Sequencer] Unknown replica ID in UPDATE: " + oldReplicaId);
         }
+    }
+
+    private String canonicalReplicaId(String rawReplicaId) {
+        if (rawReplicaId == null) {
+            return null;
+        }
+
+        String trimmed = rawReplicaId.trim().toUpperCase();
+        if (trimmed.startsWith("R")) {
+            return trimmed;
+        }
+        if (trimmed.matches("\\d+")) {
+            return "R" + trimmed;
+        }
+        return trimmed;
     }
 
     /**

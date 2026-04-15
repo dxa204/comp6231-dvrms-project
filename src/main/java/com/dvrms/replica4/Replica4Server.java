@@ -163,7 +163,7 @@ public class Replica4Server {
     private String invokeMethod(OfficeServer target, RequestEnvelope env) {
         switch (env.method) {
             case "addVehicle":
-                return target.addVehicle(env.args[0], Integer.parseInt(env.args[1]), env.args[2], env.args[3], Integer.parseInt(env.args[4]));
+                return target.addVehicle(env.args[0], Integer.parseInt(env.args[1]), env.args[2], env.args[3], parseReservationPrice(env.args[4]));
             case "removeVehicle":
                 return target.removeVehicle(env.args[0], env.args[1]);
             case "listAvailableVehicle":
@@ -201,6 +201,10 @@ public class Replica4Server {
             return value;
         }
         return LocalDate.parse(value, ISO_DATE).format(DMY_DATE);
+    }
+
+    private int parseReservationPrice(String value) {
+        return (int) Math.round(Double.parseDouble(value));
     }
 
     private void registerWithReplicaManagers() {

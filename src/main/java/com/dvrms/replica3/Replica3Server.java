@@ -160,7 +160,7 @@ public class Replica3Server {
                         Integer.parseInt(args[1]),
                         args[2],
                         args[3],
-                        Integer.parseInt(args[4])
+                        parseReservationPrice(args[4])
                 );
             case "removeVehicle":
                 return target.removeVehicle(args[0], args[1]);
@@ -198,6 +198,10 @@ public class Replica3Server {
             return value;
         }
         return LocalDate.parse(value, ISO_DATE).format(DMY_DATE);
+    }
+
+    private int parseReservationPrice(String value) {
+        return (int) Math.round(Double.parseDouble(value));
     }
 
     private void startOfficeUdpListeners() {

@@ -152,7 +152,7 @@ public class Replica1Server {
             switch (envelope.method) {
                 case "addVehicle":
                     return officeForManager(envelope.args[0]).addVehicle(
-                            envelope.args[0], Integer.parseInt(envelope.args[1]), envelope.args[2], envelope.args[3], Integer.parseInt(envelope.args[4]));
+                            envelope.args[0], Integer.parseInt(envelope.args[1]), envelope.args[2], envelope.args[3], parseReservationPrice(envelope.args[4]));
                 case "removeVehicle":
                     return officeForManager(envelope.args[0]).removeVehicle(envelope.args[0], envelope.args[1]);
                 case "listAvailableVehicle":
@@ -203,6 +203,10 @@ public class Replica1Server {
             return value;
         }
         return LocalDate.parse(value, ISO_DATE).format(DMY_DATE);
+    }
+
+    private int parseReservationPrice(String value) {
+        return (int) Math.round(Double.parseDouble(value));
     }
 
     private void registerWithReplicaManagers() {

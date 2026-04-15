@@ -124,3 +124,10 @@
 2026-04-14T20:03:01.476 [MTL] [pool-1-thread-1] UDP listening on port 7401
 2026-04-14T20:06:52.858 [MTL] [pool-1-thread-1] UDP listening on port 7401
 2026-04-14T20:10:21.345 [MTL] [main] findVehicle SUV
+2026-04-14T20:16:43.311 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T20:24:06.005 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T20:26:14.732 [MTL] [main] findVehicle Sedan
+2026-04-14T20:28:04.990 [MTL] [main] findVehicle Sedan
+2026-04-14T20:28:53.821 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T20:32:19.693 [MTL] [pool-1-thread-1] UDP listening on port 7401
+2026-04-14T20:33:17.337 [MTL] [main] addVehicle NEW manager=MTLM1234 vehicleID=MTL1234 type=Sedan price=120

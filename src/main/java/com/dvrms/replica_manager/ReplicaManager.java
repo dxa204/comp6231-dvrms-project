@@ -240,8 +240,8 @@ public class ReplicaManager {
         // When a host runs 3 city servers for the same replicaId, all three are tracked.
         String key = id + "_" + city;
         ReplicaInfo info = new ReplicaInfo(id, city, srcHost, listenPort, launchArgs);
-        replicas.put(id, info);           // plain replicaId key for backward compatibility
         replicasByKey.put(key, info);     // city-scoped key for per-city operations
+        replicas.put(id, primaryReplicaInfo(id, info)); // plain replicaId points at the primary ingress endpoint
         System.out.println("[RM " + rmId + "] Registered " + info);
     }
  
@@ -280,7 +280,7 @@ public class ReplicaManager {
      * report and immediately initiate RM-to-RM coordination.
      */
     private void handleCrashSuspicion(int replicaId) {
-        ReplicaInfo info = replicas.get(replicaId);
+        ReplicaInfo info = primaryReplicaInfo(replicaId, replicas.get(replicaId));
         if (info == null || !info.alive) return;
  
         System.out.println("[RM " + rmId + "] CRASH suspicion for replica " + replicaId
@@ -294,7 +294,7 @@ public class ReplicaManager {
      * locally and sends back its own observation as a STATUS reply.
      */
     private void handleStatusCheck(int suspectReplicaId, String requestingRmHost) {
-        ReplicaInfo info = replicas.get(suspectReplicaId);
+        ReplicaInfo info = primaryReplicaInfo(suspectReplicaId, replicas.get(suspectReplicaId));
         String observation;
  
         if (info == null || !info.alive) {
@@ -359,7 +359,7 @@ public class ReplicaManager {
                 // newPort from RECOVER is the MTL port; WPG/BNF are offset accordingly.
             }
         }
-        ReplicaInfo info = replicas.get(replicaId);
+        ReplicaInfo info = primaryReplicaInfo(replicaId, replicas.get(replicaId));
         if (info != null) {
             info.host        = newHost;
             info.listenPort  = newPort;
@@ -453,7 +453,7 @@ public class ReplicaManager {
         if (!replacing.add(replicaId)) return; // already being replaced
  
         try {
-            ReplicaInfo info = replicas.get(replicaId);
+            ReplicaInfo info = primaryReplicaInfo(replicaId, replicas.get(replicaId));
             if (info == null) {
                 System.err.println("[RM " + rmId + "] replaceReplica: unknown replica " + replicaId);
                 return;
@@ -542,7 +542,8 @@ public class ReplicaManager {
                     + replicaId + " restarted (last pid=" + finalPid + ")");
  
             // Step 5: Notify Sequencer -- UPDATE|<oldId>|<newHost>|<newPort>
-            String updateMsg = "UPDATE|" + replicaId + "|" + info.host + "|" + info.listenPort;
+            ReplicaInfo primaryInfo = primaryReplicaInfo(replicaId, info);
+            String updateMsg = "UPDATE|" + replicaId + "|" + primaryInfo.host + "|" + primaryInfo.listenPort;
             try {
                 sendUDP(sequencerHost, SEQUENCER_PORT, updateMsg);
                 System.out.println("[RM " + rmId + "] Notified Sequencer: " + updateMsg);
@@ -551,7 +552,7 @@ public class ReplicaManager {
             }
  
             // Step 6: Broadcast RECOVER to peer RMs so they update their records
-            String recoverMsg = "RECOVER|" + replicaId + "|" + info.host + "|" + info.listenPort;
+            String recoverMsg = "RECOVER|" + replicaId + "|" + primaryInfo.host + "|" + primaryInfo.listenPort;
             broadcastToAllRMs(recoverMsg);
  
         } catch (Exception e) {
@@ -678,6 +679,24 @@ public class ReplicaManager {
             normalized = normalized.substring(1);
         }
         return Integer.parseInt(normalized);
+    }
+
+    private ReplicaInfo primaryReplicaInfo(int replicaId, ReplicaInfo fallback) {
+        ReplicaInfo mtl = replicasByKey.get(replicaId + "_MTL");
+        if (mtl != null) {
+            return mtl;
+        }
+
+        ReplicaInfo best = fallback;
+        for (Map.Entry<String, ReplicaInfo> entry : replicasByKey.entrySet()) {
+            if (!entry.getKey().startsWith(replicaId + "_")) {
+                continue;
+            }
+            if (best == null || entry.getValue().listenPort < best.listenPort) {
+                best = entry.getValue();
+            }
+        }
+        return best;
     }
  
     /** Send and wait for ACK. 500 ms timeout, 5 retries. */
